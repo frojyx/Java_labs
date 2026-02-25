@@ -25,6 +25,7 @@ public class DishController {
         return dishService.findByCategory(category);
     }
 
+
     @GetMapping("/weight")
     public List<DishDto> getWeightById(@RequestParam int id) {
         return dishService.findById(id);
