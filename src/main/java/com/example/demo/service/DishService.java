@@ -24,8 +24,8 @@ public class DishService {
         return dishMapper.toDtoList(dishes);
     }
 
-    public List<DishDto> findById(int id) {
-        List<Dish> dishes = dishRepository.findById(id);
+    public List<DishDto> findByPrice(double price) {
+        List<Dish> dishes = dishRepository.findByPrice(price);
         return dishMapper.toDtoList(dishes);
     }
 }

@@ -26,8 +26,8 @@ public class DishController {
     }
 
 
-    @GetMapping("/weight")
-    public List<DishDto> getWeightById(@RequestParam int id) {
-        return dishService.findById(id);
+    @GetMapping("/dish")
+    public List<DishDto> getDishByPrice(@RequestParam double price) {
+        return dishService.findByPrice(price);
     }
 }

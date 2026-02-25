@@ -43,10 +43,10 @@ public class DishRepository {
         return result;
     }
 
-    public List<Dish> findById(int id) {
+    public List<Dish> findByPrice(double price) {
         List<Dish> result = new ArrayList<>();
         for (Dish current : dishes) {
-            if (current.getId() == id) {
+            if (current.getPrice() == price) {
                 result.add(current);
             }
         }

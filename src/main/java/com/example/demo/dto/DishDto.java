@@ -3,6 +3,8 @@ package com.example.demo.dto;
 public class DishDto {
     private int id;
 
+    private double price;
+
     private String category;
 
     private String name;
@@ -23,11 +25,12 @@ public class DishDto {
         this.name = name;
     }
 
-    public int getId() {
-        return id;
+    public double getPrice() {
+        return price;
     }
 
-    public void setId(int id) {
-        this.id = id;
+    public void setPrice(double price) {
+        this.price = price;
     }
+
 }

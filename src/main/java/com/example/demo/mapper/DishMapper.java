@@ -14,7 +14,7 @@ public class DishMapper {
         DishDto dishDto = new DishDto();
         dishDto.setName(dish.getName());
         dishDto.setCategory(dish.getCategory());
-        dishDto.setId(dish.getId());
+        dishDto.setPrice(dish.getPrice());
         return dishDto;
     }
 
@@ -27,4 +27,3 @@ public class DishMapper {
         return dishesDto;
     }
 }
-

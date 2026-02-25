@@ -31,10 +31,6 @@ public class Dish {
         return price;
     }
 
-    public int getId() {
-        return id;
-    }
-
     public int getWeight() {
         return weight;
     }
