@@ -6,6 +6,7 @@ public class CategoryDto {
     private String name;
 
     public CategoryDto() {
+        // Intentionally empty: required by frameworks (e.g., Jackson/MapStruct) for object instantiation.
     }
 
     public Long getId() {

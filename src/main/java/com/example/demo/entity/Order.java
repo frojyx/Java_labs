@@ -34,6 +34,7 @@ public class Order {
 
     // Конструктор, геттеры и сеттеры
     public Order() {
+        // Intentionally empty: required by frameworks (e.g., Jackson/MapStruct) for object instantiation.
     }
 
     public Long getId() {

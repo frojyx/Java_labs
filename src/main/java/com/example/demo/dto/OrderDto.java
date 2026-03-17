@@ -15,6 +15,7 @@ public class OrderDto {
     private List<String> dishNames;
 
     public OrderDto() {
+        // Intentionally empty: required by frameworks (e.g., Jackson/MapStruct) for object instantiation.
     }
 
     // Геттеры и Сеттеры

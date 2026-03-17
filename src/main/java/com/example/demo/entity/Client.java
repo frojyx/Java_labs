@@ -25,6 +25,7 @@ public class Client {
 
 
     public Client() {
+        // Intentionally empty: required by frameworks (e.g., Jackson/MapStruct) for object instantiation.
     }
 
     public Long getId() {

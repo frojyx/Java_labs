@@ -40,6 +40,7 @@ public class Dish {
     private List<Ingredient> ingredients;
 
     public Dish() {
+        // Intentionally empty: required by frameworks (e.g., Jackson/MapStruct) for object instantiation.
     }
 
     public Long getId() {

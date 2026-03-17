@@ -9,6 +9,7 @@ public class ClientDto {
 
     // Конструктор по умолчанию (обязателен для библиотек маппинга)
     public ClientDto() {
+        // Intentionally empty: required by frameworks (e.g., Jackson/MapStruct) for object instantiation.
     }
 
     // Геттеры и Сеттеры

@@ -24,6 +24,7 @@ public class Category {
     private List<Dish> dishes;
 
     public Category() {
+        // Intentionally empty: required by frameworks (e.g., Jackson/MapStruct) for object instantiation.
     }
 
     public Long getId() {
