@@ -13,6 +13,10 @@ import java.util.List;
 
 @Service
 public class IngredientService {
+    private static final String INGREDIENT_WITH_ID_PREFIX = "Ингредиент с ID ";
+
+    private static final String NOT_FOUND_SUFFIX = " не найден";
+
     private final IngredientRepository ingredientRepository;
 
     private final IngredientMapper ingredientMapper;
@@ -35,7 +39,7 @@ public class IngredientService {
     public IngredientDto findById(Long id) {
         return ingredientRepository.findById(id)
             .map(ingredientMapper::toDto)
-            .orElseThrow(() -> new RuntimeException("Ингредиент с ID " + id + " не найден"));
+            .orElseThrow(() -> new RuntimeException(INGREDIENT_WITH_ID_PREFIX + id + NOT_FOUND_SUFFIX));
     }
 
     @Transactional
@@ -47,7 +51,7 @@ public class IngredientService {
     @Transactional
     public IngredientDto update(Long id, IngredientDto ingredientDto) {
         Ingredient ingredient = ingredientRepository.findById(id)
-            .orElseThrow(() -> new RuntimeException("Ингредиент с ID " + id + " не найден"));
+            .orElseThrow(() -> new RuntimeException(INGREDIENT_WITH_ID_PREFIX + id + NOT_FOUND_SUFFIX));
         ingredient.setName(ingredientDto.getName());
         return ingredientMapper.toDto(ingredientRepository.save(ingredient));
     }
@@ -55,7 +59,7 @@ public class IngredientService {
     @Transactional
     public void deleteById(Long id) {
         Ingredient ingredient = ingredientRepository.findById(id)
-            .orElseThrow(() -> new RuntimeException("Ингредиент с ID " + id + " не найден"));
+            .orElseThrow(() -> new RuntimeException(INGREDIENT_WITH_ID_PREFIX + id + NOT_FOUND_SUFFIX));
 
         if (ingredient.getDishes() != null) {
             for (Dish dish : new ArrayList<>(ingredient.getDishes())) {

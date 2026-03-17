@@ -13,6 +13,10 @@ import java.util.List;
 
 @Service
 public class CategoryService {
+    private static final String CATEGORY_WITH_ID_PREFIX = "Категория с ID ";
+
+    private static final String NOT_FOUND_SUFFIX = " не найдена";
+
     private final CategoryRepository categoryRepository;
 
     private final CategoryMapper categoryMapper;
@@ -35,7 +39,7 @@ public class CategoryService {
     public CategoryDto findById(Long id) {
         return categoryRepository.findById(id)
             .map(categoryMapper::toDto)
-            .orElseThrow(() -> new RuntimeException("Категория с ID " + id + " не найдена"));
+            .orElseThrow(() -> new RuntimeException(CATEGORY_WITH_ID_PREFIX + id + NOT_FOUND_SUFFIX));
     }
 
     @Transactional
@@ -47,7 +51,7 @@ public class CategoryService {
     @Transactional
     public CategoryDto update(Long id, CategoryDto categoryDto) {
         Category category = categoryRepository.findById(id)
-            .orElseThrow(() -> new RuntimeException("Категория с ID " + id + " не найдена"));
+            .orElseThrow(() -> new RuntimeException(CATEGORY_WITH_ID_PREFIX + id + NOT_FOUND_SUFFIX));
         category.setName(categoryDto.getName());
         return categoryMapper.toDto(categoryRepository.save(category));
     }
@@ -55,7 +59,7 @@ public class CategoryService {
     @Transactional
     public void deleteById(Long id) {
         Category category = categoryRepository.findById(id)
-            .orElseThrow(() -> new RuntimeException("Категория с ID " + id + " не найдена"));
+            .orElseThrow(() -> new RuntimeException(CATEGORY_WITH_ID_PREFIX + id + NOT_FOUND_SUFFIX));
 
         List<Dish> dishes = category.getDishes();
         if (dishes != null) {

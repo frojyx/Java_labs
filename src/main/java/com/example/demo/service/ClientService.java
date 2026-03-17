@@ -13,6 +13,10 @@ import java.util.List;
 
 @Service
 public class ClientService {
+    private static final String CLIENT_WITH_ID_PREFIX = "Клиент с ID ";
+
+    private static final String NOT_FOUND_SUFFIX = " не найден";
+
     private final ClientRepository clientRepository;
 
     private final ClientMapper clientMapper;
@@ -35,7 +39,7 @@ public class ClientService {
     public ClientDto findById(Long id) {
         return clientRepository.findById(id)
             .map(clientMapper::toDto)
-            .orElseThrow(() -> new RuntimeException("Клиент с ID " + id + " не найден"));
+            .orElseThrow(() -> new RuntimeException(CLIENT_WITH_ID_PREFIX + id + NOT_FOUND_SUFFIX));
     }
 
     @Transactional
@@ -47,7 +51,7 @@ public class ClientService {
     @Transactional
     public ClientDto update(Long id, ClientDto clientDto) {
         Client client = clientRepository.findById(id)
-            .orElseThrow(() -> new RuntimeException("Клиент с ID " + id + " не найден"));
+            .orElseThrow(() -> new RuntimeException(CLIENT_WITH_ID_PREFIX + id + NOT_FOUND_SUFFIX));
         client.setFirstName(clientDto.getFirstName());
         client.setLastName(clientDto.getLastName());
         return clientMapper.toDto(clientRepository.save(client));
@@ -56,7 +60,7 @@ public class ClientService {
     @Transactional
     public void deleteById(Long id) {
         Client client = clientRepository.findById(id)
-            .orElseThrow(() -> new RuntimeException("Клиент с ID " + id + " не найден"));
+            .orElseThrow(() -> new RuntimeException(CLIENT_WITH_ID_PREFIX + id + NOT_FOUND_SUFFIX));
 
         List<Order> orders = client.getOrders();
         if (orders != null && !orders.isEmpty()) {
