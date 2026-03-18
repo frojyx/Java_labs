@@ -15,7 +15,6 @@ import java.util.List;
 @Repository
 public interface DishRepository extends JpaRepository<Dish, Long> {
     @NonNull
-    // Решение N+1: выгружаем блюдо сразу с категорией и ингредиентами за 1 запрос
     @EntityGraph(attributePaths = {"category", "ingredients"})
     List<Dish> findAll();
 

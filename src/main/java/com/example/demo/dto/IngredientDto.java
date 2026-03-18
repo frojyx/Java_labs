@@ -6,7 +6,6 @@ public class IngredientDto {
     private String name;
 
     public IngredientDto() {
-        // Intentionally empty: required by frameworks (e.g., Jackson/MapStruct) for object instantiation.
     }
 
     public Long getId() {

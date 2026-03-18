@@ -15,13 +15,11 @@ public class OrderMapper {
         OrderDto dto = new OrderDto();
         dto.setId(order.getId());
 
-        // Маппинг данных клиента
         if (order.getClient() != null) {
             dto.setClientFirstName(order.getClient().getFirstName());
             dto.setClientLastName(order.getClient().getLastName());
         }
 
-        // Маппинг списка блюд (собираем только названия)
         if (order.getDishes() != null) {
             List<String> dishNames = order.getDishes().stream()
                 .map(Dish::getName)

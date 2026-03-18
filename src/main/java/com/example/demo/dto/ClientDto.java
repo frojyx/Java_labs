@@ -7,12 +7,9 @@ public class ClientDto {
 
     private String lastName;
 
-    // Конструктор по умолчанию (обязателен для библиотек маппинга)
     public ClientDto() {
-        // Intentionally empty: required by frameworks (e.g., Jackson/MapStruct) for object instantiation.
     }
 
-    // Геттеры и Сеттеры
     public Long getId() {
         return id;
     }

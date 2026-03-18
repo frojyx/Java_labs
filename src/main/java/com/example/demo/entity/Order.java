@@ -32,9 +32,7 @@ public class Order {
     )
     private List<Dish> dishes;
 
-    // Конструктор, геттеры и сеттеры
     public Order() {
-        // Intentionally empty: required by frameworks (e.g., Jackson/MapStruct) for object instantiation.
     }
 
     public Long getId() {

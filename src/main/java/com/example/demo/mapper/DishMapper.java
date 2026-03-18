@@ -17,7 +17,7 @@ public class DishMapper {
         dishDto.setName(dish.getName());
         dishDto.setCategory(dish.getCategory() != null ? dish.getCategory().getName() : null);
         dishDto.setPrice(dish.getPrice());
-        dishDto.setWeight(dish.getWeight()); // <--- Добавь это
+        dishDto.setWeight(dish.getWeight());
         if (dish.getIngredients() != null) {
             dishDto.setIngredients(dish.getIngredients().stream()
                 .map(Ingredient::getName)
@@ -26,13 +26,11 @@ public class DishMapper {
         return dishDto;
     }
 
-    // Добавь этот метод для сохранения
     public Dish toEntity(DishDto dishDto) {
         Dish dish = new Dish();
         dish.setName(dishDto.getName());
         dish.setPrice(dishDto.getPrice());
-        dish.setWeight(dishDto.getWeight()); // <--- Добавь это
-        // Категорию мы обычно ищем в сервисе отдельно, поэтому здесь не устанавливаем
+        dish.setWeight(dishDto.getWeight());
         return dish;
     }
 

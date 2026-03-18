@@ -77,4 +77,20 @@ public class DishSearchCacheKey {
         return Objects.hash(nativeQuery, categoryName, ingredientName, namePart, minPrice, maxPrice, page, size,
             sortOrders);
     }
+
+    @Override
+    public String toString() {
+        return "DishSearchCacheKey{"
+            + "nativeQuery=" + nativeQuery
+            + ", categoryName='" + categoryName + '\''
+            + ", ingredientName='" + ingredientName + '\''
+            + ", namePart='" + namePart + '\''
+            + ", minPrice=" + minPrice
+            + ", maxPrice=" + maxPrice
+            + ", page=" + page
+            + ", size=" + size
+            + ", sortOrders=" + sortOrders
+            + '}';
+    }
 }
+

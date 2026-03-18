@@ -8,6 +8,5 @@ import java.util.Optional;
 
 @Repository
 public interface CategoryRepository extends JpaRepository<Category, Long> {
-    // Spring сам поймет, что нужно искать по полю 'name'
     Optional<Category> findByName(String name);
 }

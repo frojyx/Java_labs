@@ -13,6 +13,8 @@ import com.example.demo.repository.ClientRepository;
 import com.example.demo.repository.DishRepository;
 import com.example.demo.repository.IngredientRepository;
 import com.example.demo.repository.OrderRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -26,11 +28,13 @@ import java.util.stream.Collectors;
 
 @Service
 public class DishService {
+    private static final Logger LOGGER = LoggerFactory.getLogger(DishService.class);
+
     private final DishRepository dishRepository;
 
     private final DishMapper dishMapper;
 
-    private final CategoryRepository categoryRepository; // 1. Добавь поле
+    private final CategoryRepository categoryRepository;
 
     private final IngredientRepository ingredientRepository;
 
@@ -40,7 +44,6 @@ public class DishService {
 
     private final Map<DishSearchCacheKey, Page<DishDto>> searchCache = new ConcurrentHashMap<>();
 
-    // 2. Добавь в конструктор
     public DishService(DishRepository dishRepository, DishMapper dishMapper, CategoryRepository categoryRepository,
                        IngredientRepository ingredientRepository, ClientRepository clientRepository,
                        OrderRepository orderRepository) {
@@ -52,7 +55,6 @@ public class DishService {
         this.orderRepository = orderRepository;
     }
 
-    // Теперь возвращаем DTO, используя метод JpaRepository
     @Transactional(readOnly = true)
     public DishDto findById(Long id) {
         return dishRepository.findById(id)
@@ -68,7 +70,6 @@ public class DishService {
             .collect(Collectors.toList());
     }
 
-    // Добавь метод для получения всех блюд (важно для проверки N+1)
     @Transactional(readOnly = true)
     public List<DishDto> findAll() {
         return dishMapper.toDtoList(dishRepository.findAll());
@@ -81,26 +82,33 @@ public class DishService {
         DishSearchCacheKey key = new DishSearchCacheKey(useNativeQuery, categoryName, ingredientName, namePart,
             minPrice, maxPrice, pageable.getPageNumber(), pageable.getPageSize(), pageable.getSort());
 
-        return searchCache.computeIfAbsent(key, ignoredKey -> {
-            Page<Dish> dishes = useNativeQuery
-                ? dishRepository.searchWithFiltersNative(categoryName, ingredientName, namePart, minPrice, maxPrice,
-                pageable)
-                : dishRepository.searchWithFiltersJpql(categoryName, ingredientName, namePart, minPrice, maxPrice,
-                pageable);
-            return dishes.map(dishMapper::toDto);
-        });
+        Page<DishDto> cachedResult = searchCache.get(key);
+        if (cachedResult != null) {
+            LOGGER.debug("Dish search cache HIT: {}", key);
+            return cachedResult;
+        }
+
+        LOGGER.debug("Dish search cache MISS: {}", key);
+        Page<DishDto> computedResult = findWithSelectedQuery(categoryName, ingredientName, namePart, minPrice,
+            maxPrice, pageable, useNativeQuery)
+            .map(dishMapper::toDto);
+
+        Page<DishDto> existingResult = searchCache.putIfAbsent(key, computedResult);
+        if (existingResult != null) {
+            LOGGER.debug("Dish search cache filled concurrently, using existing value: {}", key);
+            return existingResult;
+        }
+
+        return computedResult;
     }
 
-
-    // Метод сохранения (и для POST, и для PUT)
     @Transactional
     public DishDto save(DishDto dishDto) {
         Dish dish = new Dish();
         dish.setName(dishDto.getName());
         dish.setPrice(dishDto.getPrice());
-        dish.setWeight(dishDto.getWeight()); // Сохраняем вес
+        dish.setWeight(dishDto.getWeight());
 
-        // Ищем категорию по имени
         if (dishDto.getCategory() != null) {
             Category category = categoryRepository.findByName(dishDto.getCategory())
                 .orElseThrow(() -> new RuntimeException("Категория '" + dishDto.getCategory() + "' не найдена"));
@@ -114,35 +122,13 @@ public class DishService {
         return dishMapper.toDto(savedDish);
     }
 
-    // Метод удаления
     @Transactional
     public void deleteById(Long id) {
         Dish dish = dishRepository.findById(id)
             .orElseThrow(() -> new RuntimeException("Блюдо с ID " + id + " не найдено"));
 
-
-        for (Order order : new ArrayList<>(orderRepository.findAll())) {
-            List<Dish> dishes = order.getDishes();
-            if (dishes != null && dishes.stream().anyMatch(orderDish -> orderDish.getId().equals(id))) {
-                Client client = order.getClient();
-                orderRepository.delete(order);
-                if (client != null && client.getOrders() != null) {
-                    client.getOrders().removeIf(existingOrder -> existingOrder.getId().equals(order.getId()));
-                    if (client.getOrders().isEmpty()) {
-                        clientRepository.delete(client);
-                    }
-                }
-            }
-        }
-
-        if (dish.getIngredients() != null) {
-            for (Ingredient ingredient : new ArrayList<>(dish.getIngredients())) {
-                if (ingredient.getDishes() != null) {
-                    ingredient.getDishes().remove(dish);
-                }
-            }
-            dish.getIngredients().clear();
-        }
+        removeDishFromOrdersAndCleanupClients(id);
+        detachDishFromIngredients(dish);
 
         dish.setCategory(null);
         dishRepository.delete(dish);
@@ -151,11 +137,9 @@ public class DishService {
 
     @Transactional
     public DishDto update(Long id, DishDto dishDto) {
-        // 1. Ищем существующую сущность по ID
         Dish existingDish = dishRepository.findById(id)
             .orElseThrow(() -> new RuntimeException("Блюдо с ID " + id + " не найдено"));
 
-        // 2. Обновляем поля из DTO
         existingDish.setName(dishDto.getName());
         existingDish.setPrice(dishDto.getPrice());
         existingDish.setWeight(dishDto.getWeight());
@@ -168,10 +152,61 @@ public class DishService {
         }
         existingDish.setIngredients(resolveIngredients(dishDto.getIngredients()));
 
-        // 3. Сохраняем обновленную сущность и возвращаем DTO
         Dish updatedDish = dishRepository.save(existingDish);
         invalidateSearchCache();
         return dishMapper.toDto(updatedDish);
+    }
+
+    private Page<Dish> findWithSelectedQuery(String categoryName, String ingredientName, String namePart,
+                                             Double minPrice, Double maxPrice, Pageable pageable,
+                                             boolean useNativeQuery) {
+        if (useNativeQuery) {
+            return dishRepository.searchWithFiltersNative(categoryName, ingredientName, namePart, minPrice, maxPrice,
+                pageable);
+        }
+        return dishRepository.searchWithFiltersJpql(categoryName, ingredientName, namePart, minPrice, maxPrice,
+            pageable);
+    }
+
+    private void removeDishFromOrdersAndCleanupClients(Long dishId) {
+        for (Order order : new ArrayList<>(orderRepository.findAll())) {
+            if (!containsDish(order, dishId)) {
+                continue;
+            }
+
+            Client client = order.getClient();
+            orderRepository.delete(order);
+            removeOrderFromClient(client, order.getId());
+        }
+    }
+
+    private boolean containsDish(Order order, Long dishId) {
+        List<Dish> dishes = order.getDishes();
+        return dishes != null && dishes.stream().anyMatch(orderDish -> orderDish.getId().equals(dishId));
+    }
+
+    private void removeOrderFromClient(Client client, Long orderId) {
+        if (client == null || client.getOrders() == null) {
+            return;
+        }
+
+        client.getOrders().removeIf(existingOrder -> existingOrder.getId().equals(orderId));
+        if (client.getOrders().isEmpty()) {
+            clientRepository.delete(client);
+        }
+    }
+
+    private void detachDishFromIngredients(Dish dish) {
+        if (dish.getIngredients() == null) {
+            return;
+        }
+
+        for (Ingredient ingredient : new ArrayList<>(dish.getIngredients())) {
+            if (ingredient.getDishes() != null) {
+                ingredient.getDishes().remove(dish);
+            }
+        }
+        dish.getIngredients().clear();
     }
 
     private List<Ingredient> resolveIngredients(List<String> ingredientNames) {
@@ -190,3 +225,4 @@ public class DishService {
         searchCache.clear();
     }
 }
+

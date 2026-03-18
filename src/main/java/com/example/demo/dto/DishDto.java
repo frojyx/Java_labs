@@ -11,11 +11,10 @@ public class DishDto {
 
     private String name;
 
-    private int weight; // <-- Добавь это поле
+    private int weight;
 
     private List<String> ingredients;
 
-    // Добавь геттеры и сеттеры для weight
     public int getWeight() {
         return weight;
     }

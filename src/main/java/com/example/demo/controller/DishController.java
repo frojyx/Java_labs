@@ -25,13 +25,11 @@ public class DishController {
         this.dishService = dishService;
     }
 
-    // CREATE
     @PostMapping("/dish")
     public DishDto createDish(@RequestBody DishDto dishDto) {
         return dishService.save(dishDto);
     }
 
-    // READ ALL
     @GetMapping("/dishAll")
     public List<DishDto> getAllDishes() {
         return dishService.findAll();
@@ -51,19 +49,16 @@ public class DishController {
             pageable, useNativeQuery);
     }
 
-    // READ ONE
     @GetMapping("/dish/{id}")
     public DishDto getIdByDish(@PathVariable Long id) {
         return dishService.findById(id);
     }
 
-    // UPDATE
     @PutMapping("/dish/{id}")
     public DishDto updateDish(@PathVariable Long id, @RequestBody DishDto dishDto) {
         return dishService.update(id, dishDto);
     }
 
-    // DELETE
     @DeleteMapping("/dish/{id}")
     public void deleteDish(@PathVariable Long id) {
         dishService.deleteById(id);
