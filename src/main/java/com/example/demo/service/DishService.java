@@ -224,4 +224,19 @@ public class DishService {
     private void invalidateSearchCache() {
         searchCache.clear();
     }
+
+    @Transactional(readOnly = true)
+    public Map<String, Object> getCacheStatus() {
+        List<String> keys = searchCache.keySet().stream()
+            .map(DishSearchCacheKey::toString)
+            .sorted()
+            .toList();
+
+        return Map.of(
+            "cacheName", "dishSearchCache",
+            "size", searchCache.size(),
+            "keys", keys
+        );
+    }
+
 }
