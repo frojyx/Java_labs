@@ -16,11 +16,13 @@ import com.example.demo.repository.OrderRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -90,8 +92,7 @@ public class DishService {
 
         LOGGER.debug("Dish search cache MISS: {}", key);
         Page<DishDto> computedResult = findWithSelectedQuery(categoryName, ingredientName, namePart, minPrice,
-            maxPrice, pageable, useNativeQuery)
-            .map(dishMapper::toDto);
+            maxPrice, pageable, useNativeQuery);
 
         Page<DishDto> existingResult = searchCache.putIfAbsent(key, computedResult);
         if (existingResult != null) {
@@ -157,15 +158,40 @@ public class DishService {
         return dishMapper.toDto(updatedDish);
     }
 
-    private Page<Dish> findWithSelectedQuery(String categoryName, String ingredientName, String namePart,
+    private Page<DishDto> findWithSelectedQuery(String categoryName, String ingredientName, String namePart,
                                              Double minPrice, Double maxPrice, Pageable pageable,
                                              boolean useNativeQuery) {
         if (useNativeQuery) {
-            return dishRepository.searchWithFiltersNative(categoryName, ingredientName, namePart, minPrice, maxPrice,
-                pageable);
+            return findWithNativeTwoStepQuery(categoryName, ingredientName, namePart, minPrice, maxPrice, pageable);
         }
         return dishRepository.searchWithFiltersJpql(categoryName, ingredientName, namePart, minPrice, maxPrice,
-            pageable);
+            pageable).map(dishMapper::toDto);
+    }
+
+    private Page<DishDto> findWithNativeTwoStepQuery(String categoryName, String ingredientName, String namePart,
+                                                     Double minPrice, Double maxPrice, Pageable pageable) {
+        Page<Long> idsPage = dishRepository.searchIdsWithFiltersNative(
+            categoryName, ingredientName, namePart, minPrice, maxPrice, pageable
+        );
+
+        if (idsPage.isEmpty()) {
+            return new PageImpl<>(List.of(), pageable, idsPage.getTotalElements());
+        }
+
+        List<Long> ids = idsPage.getContent();
+        List<Dish> dishes = dishRepository.findAllByIdInWithGraph(ids);
+        Map<Long, Dish> dishById = new HashMap<>();
+        for (Dish dish : dishes) {
+            dishById.put(dish.getId(), dish);
+        }
+
+        List<DishDto> orderedDtos = ids.stream()
+            .map(dishById::get)
+            .filter(java.util.Objects::nonNull)
+            .map(dishMapper::toDto)
+            .toList();
+
+        return new PageImpl<>(orderedDtos, pageable, idsPage.getTotalElements());
     }
 
     private void removeDishFromOrdersAndCleanupClients(Long dishId) {
