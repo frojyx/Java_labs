@@ -57,7 +57,7 @@ public interface DishRepository extends JpaRepository<Dish, Long> {
         """,
 
         nativeQuery = true)
-    Page<Long> searchIdsWithFiltersNative(
+    Page<Dish> searchWithFiltersNative(
         @Param("categoryName") String categoryName,
         @Param("ingredientName") String ingredientName,
         @Param("namePart") String namePart,
@@ -66,11 +66,4 @@ public interface DishRepository extends JpaRepository<Dish, Long> {
         Pageable pageable
     );
 
-    @EntityGraph(attributePaths = {"category", "ingredients"})
-    @Query("""
-        select distinct d
-        from Dish d
-        where d.id in :ids
-        """)
-    List<Dish> findAllByIdInWithGraph(@Param("ids") List<Long> ids);
 }
