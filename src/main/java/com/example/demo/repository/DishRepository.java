@@ -55,18 +55,7 @@ public interface DishRepository extends JpaRepository<Dish, Long> {
           and (:minPrice is null or d.price >= :minPrice)
           and (:maxPrice is null or d.price <= :maxPrice)
         """,
-        countQuery = """
-            select count(distinct d.id)
-            from dishes d
-            left join categories c on c.id = d.category_id
-            left join dish_ingredients di on di.dish_id = d.id
-            left join ingredients i on i.id = di.ingredient_id
-            where (:categoryName is null or lower(c.name) = lower(:categoryName))
-              and (:ingredientName is null or lower(i.name) = lower(:ingredientName))
-              and (:namePart is null or lower(d.name) like lower(concat('%', :namePart, '%')))
-              and (:minPrice is null or d.price >= :minPrice)
-              and (:maxPrice is null or d.price <= :maxPrice)
-            """,
+
         nativeQuery = true)
     Page<Long> searchIdsWithFiltersNative(
         @Param("categoryName") String categoryName,
