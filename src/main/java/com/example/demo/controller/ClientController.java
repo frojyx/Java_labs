@@ -2,6 +2,11 @@ package com.example.demo.controller;
 
 import com.example.demo.dto.ClientDto;
 import com.example.demo.service.ClientService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.Positive;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -14,7 +19,9 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
 
 @RestController
+@Validated
 @RequestMapping("/api/clients")
+@Tag(name = "Clients", description = "Операции с клиентами")
 public class ClientController {
     private final ClientService clientService;
 
@@ -23,27 +30,33 @@ public class ClientController {
     }
 
     @GetMapping
+    @Operation(summary = "Получить всех клиентов")
     public List<ClientDto> getAllClients() {
         return clientService.findAll();
     }
 
     @GetMapping("/{id}")
-    public ClientDto getClientById(@PathVariable Long id) {
+    @Operation(summary = "Получить клиента по ID")
+    public ClientDto getClientById(@PathVariable @Positive(message = "ID должен быть больше 0") Long id) {
         return clientService.findById(id);
     }
 
     @PostMapping
-    public ClientDto createClient(@RequestBody ClientDto clientDto) {
+    @Operation(summary = "Создать клиента")
+    public ClientDto createClient(@Valid @RequestBody ClientDto clientDto) {
         return clientService.save(clientDto);
     }
 
     @PutMapping("/{id}")
-    public ClientDto updateClient(@PathVariable Long id, @RequestBody ClientDto clientDto) {
+    @Operation(summary = "Обновить клиента")
+    public ClientDto updateClient(@PathVariable @Positive(message = "ID должен быть больше 0") Long id,
+                                  @Valid @RequestBody ClientDto clientDto) {
         return clientService.update(id, clientDto);
     }
 
     @DeleteMapping("/{id}")
-    public void deleteClient(@PathVariable Long id) {
+    @Operation(summary = "Удалить клиента")
+    public void deleteClient(@PathVariable @Positive(message = "ID должен быть больше 0") Long id) {
         clientService.deleteById(id);
     }
 }

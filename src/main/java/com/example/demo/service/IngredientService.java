@@ -3,6 +3,7 @@ package com.example.demo.service;
 import com.example.demo.dto.IngredientDto;
 import com.example.demo.entity.Dish;
 import com.example.demo.entity.Ingredient;
+import com.example.demo.exception.ResourceNotFoundException;
 import com.example.demo.mapper.IngredientMapper;
 import com.example.demo.repository.IngredientRepository;
 import org.springframework.stereotype.Service;
@@ -39,27 +40,31 @@ public class IngredientService {
     public IngredientDto findById(Long id) {
         return ingredientRepository.findById(id)
             .map(ingredientMapper::toDto)
-            .orElseThrow(() -> new RuntimeException(INGREDIENT_WITH_ID_PREFIX + id + NOT_FOUND_SUFFIX));
+            .orElseThrow(() -> new ResourceNotFoundException(INGREDIENT_WITH_ID_PREFIX + id + NOT_FOUND_SUFFIX));
     }
 
     @Transactional
     public IngredientDto save(IngredientDto ingredientDto) {
         Ingredient ingredient = ingredientMapper.toEntity(ingredientDto);
-        return ingredientMapper.toDto(ingredientRepository.save(ingredient));
+        Ingredient savedIngredient = ingredientRepository.save(ingredient);
+        dishService.invalidateSearchCache();
+        return ingredientMapper.toDto(savedIngredient);
     }
 
     @Transactional
     public IngredientDto update(Long id, IngredientDto ingredientDto) {
         Ingredient ingredient = ingredientRepository.findById(id)
-            .orElseThrow(() -> new RuntimeException(INGREDIENT_WITH_ID_PREFIX + id + NOT_FOUND_SUFFIX));
+            .orElseThrow(() -> new ResourceNotFoundException(INGREDIENT_WITH_ID_PREFIX + id + NOT_FOUND_SUFFIX));
         ingredient.setName(ingredientDto.getName());
-        return ingredientMapper.toDto(ingredientRepository.save(ingredient));
+        Ingredient updatedIngredient = ingredientRepository.save(ingredient);
+        dishService.invalidateSearchCache();
+        return ingredientMapper.toDto(updatedIngredient);
     }
 
     @Transactional
     public void deleteById(Long id) {
         Ingredient ingredient = ingredientRepository.findById(id)
-            .orElseThrow(() -> new RuntimeException(INGREDIENT_WITH_ID_PREFIX + id + NOT_FOUND_SUFFIX));
+            .orElseThrow(() -> new ResourceNotFoundException(INGREDIENT_WITH_ID_PREFIX + id + NOT_FOUND_SUFFIX));
 
         if (ingredient.getDishes() != null) {
             for (Dish dish : new ArrayList<>(ingredient.getDishes())) {
@@ -68,5 +73,6 @@ public class IngredientService {
         }
 
         ingredientRepository.delete(ingredient);
+        dishService.invalidateSearchCache();
     }
 }

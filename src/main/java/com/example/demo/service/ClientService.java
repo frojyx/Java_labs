@@ -3,6 +3,7 @@ package com.example.demo.service;
 import com.example.demo.dto.ClientDto;
 import com.example.demo.entity.Client;
 import com.example.demo.entity.Order;
+import com.example.demo.exception.ResourceNotFoundException;
 import com.example.demo.mapper.ClientMapper;
 import com.example.demo.repository.ClientRepository;
 import com.example.demo.repository.OrderRepository;
@@ -39,7 +40,7 @@ public class ClientService {
     public ClientDto findById(Long id) {
         return clientRepository.findById(id)
             .map(clientMapper::toDto)
-            .orElseThrow(() -> new RuntimeException(CLIENT_WITH_ID_PREFIX + id + NOT_FOUND_SUFFIX));
+            .orElseThrow(() -> new ResourceNotFoundException(CLIENT_WITH_ID_PREFIX + id + NOT_FOUND_SUFFIX));
     }
 
     @Transactional
@@ -51,7 +52,7 @@ public class ClientService {
     @Transactional
     public ClientDto update(Long id, ClientDto clientDto) {
         Client client = clientRepository.findById(id)
-            .orElseThrow(() -> new RuntimeException(CLIENT_WITH_ID_PREFIX + id + NOT_FOUND_SUFFIX));
+            .orElseThrow(() -> new ResourceNotFoundException(CLIENT_WITH_ID_PREFIX + id + NOT_FOUND_SUFFIX));
         client.setFirstName(clientDto.getFirstName());
         client.setLastName(clientDto.getLastName());
         return clientMapper.toDto(clientRepository.save(client));
@@ -60,7 +61,7 @@ public class ClientService {
     @Transactional
     public void deleteById(Long id) {
         Client client = clientRepository.findById(id)
-            .orElseThrow(() -> new RuntimeException(CLIENT_WITH_ID_PREFIX + id + NOT_FOUND_SUFFIX));
+            .orElseThrow(() -> new ResourceNotFoundException(CLIENT_WITH_ID_PREFIX + id + NOT_FOUND_SUFFIX));
 
         List<Order> orders = client.getOrders();
         if (orders != null && !orders.isEmpty()) {

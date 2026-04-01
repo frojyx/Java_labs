@@ -11,19 +11,24 @@ import com.example.demo.mapper.DishMapper;
 import com.example.demo.repository.CategoryRepository;
 import com.example.demo.repository.ClientRepository;
 import com.example.demo.repository.DishRepository;
+import com.example.demo.repository.DishSearchNativeProjection;
 import com.example.demo.repository.IngredientRepository;
 import com.example.demo.repository.OrderRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 @Service
@@ -42,7 +47,7 @@ public class DishService {
 
     private final OrderRepository orderRepository;
 
-    private final Map<DishSearchCacheKey, Page<DishDto>> searchCache = new ConcurrentHashMap<>();
+    private final Map<DishSearchCacheKey, Page<DishDto>> searchCache = new HashMap<>();
 
     public DishService(DishRepository dishRepository, DishMapper dishMapper, CategoryRepository categoryRepository,
                        IngredientRepository ingredientRepository, ClientRepository clientRepository,
@@ -79,8 +84,10 @@ public class DishService {
     public Page<DishDto> searchWithFilters(String categoryName, String ingredientName, String namePart,
                                            Double minPrice, Double maxPrice, Pageable pageable,
                                            boolean useNativeQuery) {
+        Pageable effectivePageable = normalizePageable(pageable);
         DishSearchCacheKey key = new DishSearchCacheKey(useNativeQuery, categoryName, ingredientName, namePart,
-            minPrice, maxPrice, pageable.getPageNumber(), pageable.getPageSize(), pageable.getSort());
+            minPrice, maxPrice, effectivePageable.getPageNumber(), effectivePageable.getPageSize(),
+            effectivePageable.getSort());
 
         Page<DishDto> cachedResult = searchCache.get(key);
         if (cachedResult != null) {
@@ -90,14 +97,9 @@ public class DishService {
 
         LOGGER.debug("Dish search cache MISS: {}", key);
         Page<DishDto> computedResult = findWithSelectedQuery(categoryName, ingredientName, namePart, minPrice,
-            maxPrice, pageable, useNativeQuery);
+            maxPrice, effectivePageable, useNativeQuery);
 
-        Page<DishDto> existingResult = searchCache.putIfAbsent(key, computedResult);
-        if (existingResult != null) {
-            LOGGER.debug("Dish search cache filled concurrently, using existing value: {}", key);
-            return existingResult;
-        }
-
+        searchCache.put(key, computedResult);
         return computedResult;
     }
 
@@ -157,16 +159,22 @@ public class DishService {
     }
 
     private Page<DishDto> findWithSelectedQuery(String categoryName, String ingredientName, String namePart,
-                                             Double minPrice, Double maxPrice, Pageable pageable,
-                                             boolean useNativeQuery) {
+                                                Double minPrice, Double maxPrice, Pageable pageable,
+                                                boolean useNativeQuery) {
         if (useNativeQuery) {
-            return dishRepository.searchWithFiltersNative(
-                categoryName, ingredientName, namePart, minPrice, maxPrice, pageable
-            ).map(dishMapper::toDto);
+            return findWithNativeQuery(categoryName, ingredientName, namePart, minPrice, maxPrice, pageable);
         }
         return dishRepository.searchWithFiltersJpql(categoryName, ingredientName, namePart, minPrice, maxPrice,
             pageable).map(dishMapper::toDto);
     }
+
+    private Page<DishDto> findWithNativeQuery(String categoryName, String ingredientName, String namePart,
+                                              Double minPrice, Double maxPrice, Pageable pageable) {
+        return dishRepository.searchWithFiltersNative(
+            categoryName, ingredientName, namePart, minPrice, maxPrice, pageable
+        ).map(this::mapNativeProjectionToDto);
+    }
+
     private void removeDishFromOrdersAndCleanupClients(Long dishId) {
         for (Order order : new ArrayList<>(orderRepository.findAll())) {
             if (!containsDish(order, dishId)) {
@@ -220,7 +228,7 @@ public class DishService {
         return ingredients;
     }
 
-    private void invalidateSearchCache() {
+    public void invalidateSearchCache() {
         searchCache.clear();
     }
 
@@ -236,6 +244,34 @@ public class DishService {
             "size", searchCache.size(),
             "keys", keys
         );
+    }
+
+    private DishDto mapNativeProjectionToDto(DishSearchNativeProjection projection) {
+        DishDto dishDto = new DishDto();
+        dishDto.setId(projection.getId());
+        dishDto.setName(projection.getName());
+        dishDto.setPrice(projection.getPrice());
+        dishDto.setWeight(projection.getWeight());
+        dishDto.setCategory(projection.getCategory());
+        dishDto.setIngredients(parseIngredientsCsv(projection.getIngredientsCsv()));
+        return dishDto;
+    }
+
+    private List<String> parseIngredientsCsv(String ingredientsCsv) {
+        if (ingredientsCsv == null || ingredientsCsv.isBlank()) {
+            return Collections.emptyList();
+        }
+        return Arrays.stream(ingredientsCsv.split(","))
+            .map(String::trim)
+            .filter(value -> !value.isEmpty())
+            .toList();
+    }
+
+    private Pageable normalizePageable(Pageable pageable) {
+        if (pageable.getSort().isSorted()) {
+            return pageable;
+        }
+        return PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), Sort.by("id").ascending());
     }
 
 }

@@ -3,6 +3,7 @@ package com.example.demo.service;
 import com.example.demo.dto.CategoryDto;
 import com.example.demo.entity.Category;
 import com.example.demo.entity.Dish;
+import com.example.demo.exception.ResourceNotFoundException;
 import com.example.demo.mapper.CategoryMapper;
 import com.example.demo.repository.CategoryRepository;
 import com.example.demo.repository.DishRepository;
@@ -23,11 +24,14 @@ public class CategoryService {
 
     private final DishRepository dishRepository;
 
+    private final DishService dishService;
+
     public CategoryService(CategoryRepository categoryRepository, CategoryMapper categoryMapper,
-                           DishRepository dishRepository) {
+                           DishRepository dishRepository, DishService dishService) {
         this.categoryRepository = categoryRepository;
         this.categoryMapper = categoryMapper;
         this.dishRepository = dishRepository;
+        this.dishService = dishService;
     }
 
     @Transactional(readOnly = true)
@@ -39,27 +43,31 @@ public class CategoryService {
     public CategoryDto findById(Long id) {
         return categoryRepository.findById(id)
             .map(categoryMapper::toDto)
-            .orElseThrow(() -> new RuntimeException(CATEGORY_WITH_ID_PREFIX + id + NOT_FOUND_SUFFIX));
+            .orElseThrow(() -> new ResourceNotFoundException(CATEGORY_WITH_ID_PREFIX + id + NOT_FOUND_SUFFIX));
     }
 
     @Transactional
     public CategoryDto save(CategoryDto categoryDto) {
         Category category = categoryMapper.toEntity(categoryDto);
-        return categoryMapper.toDto(categoryRepository.save(category));
+        Category savedCategory = categoryRepository.save(category);
+        dishService.invalidateSearchCache();
+        return categoryMapper.toDto(savedCategory);
     }
 
     @Transactional
     public CategoryDto update(Long id, CategoryDto categoryDto) {
         Category category = categoryRepository.findById(id)
-            .orElseThrow(() -> new RuntimeException(CATEGORY_WITH_ID_PREFIX + id + NOT_FOUND_SUFFIX));
+            .orElseThrow(() -> new ResourceNotFoundException(CATEGORY_WITH_ID_PREFIX + id + NOT_FOUND_SUFFIX));
         category.setName(categoryDto.getName());
-        return categoryMapper.toDto(categoryRepository.save(category));
+        Category updatedCategory = categoryRepository.save(category);
+        dishService.invalidateSearchCache();
+        return categoryMapper.toDto(updatedCategory);
     }
 
     @Transactional
     public void deleteById(Long id) {
         Category category = categoryRepository.findById(id)
-            .orElseThrow(() -> new RuntimeException(CATEGORY_WITH_ID_PREFIX + id + NOT_FOUND_SUFFIX));
+            .orElseThrow(() -> new ResourceNotFoundException(CATEGORY_WITH_ID_PREFIX + id + NOT_FOUND_SUFFIX));
 
         List<Dish> dishes = category.getDishes();
         if (dishes != null) {
@@ -70,5 +78,6 @@ public class CategoryService {
         }
 
         categoryRepository.delete(category);
+        dishService.invalidateSearchCache();
     }
 }
