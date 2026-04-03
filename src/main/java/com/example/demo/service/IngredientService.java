@@ -3,6 +3,7 @@ package com.example.demo.service;
 import com.example.demo.dto.IngredientDto;
 import com.example.demo.entity.Dish;
 import com.example.demo.entity.Ingredient;
+import com.example.demo.exception.ConflictException;
 import com.example.demo.exception.ResourceNotFoundException;
 import com.example.demo.mapper.IngredientMapper;
 import com.example.demo.repository.IngredientRepository;
@@ -45,6 +46,10 @@ public class IngredientService {
 
     @Transactional
     public IngredientDto save(IngredientDto ingredientDto) {
+        if (ingredientRepository.findByName(ingredientDto.getName()).isPresent()) {
+            throw new ConflictException("Ингредиент с названием '" + ingredientDto.getName() + "' уже существует");
+        }
+
         Ingredient ingredient = ingredientMapper.toEntity(ingredientDto);
         Ingredient savedIngredient = ingredientRepository.save(ingredient);
         dishService.invalidateSearchCache();
@@ -55,6 +60,15 @@ public class IngredientService {
     public IngredientDto update(Long id, IngredientDto ingredientDto) {
         Ingredient ingredient = ingredientRepository.findById(id)
             .orElseThrow(() -> new ResourceNotFoundException(INGREDIENT_WITH_ID_PREFIX + id + NOT_FOUND_SUFFIX));
+
+        ingredientRepository.findByName(ingredientDto.getName())
+            .filter(existingIngredient -> !existingIngredient.getId().equals(id))
+            .ifPresent(existingIngredient -> {
+                throw new ConflictException(
+                    "Ингредиент с названием '" + ingredientDto.getName() + "' уже существует"
+                );
+            });
+
         ingredient.setName(ingredientDto.getName());
         Ingredient updatedIngredient = ingredientRepository.save(ingredient);
         dishService.invalidateSearchCache();

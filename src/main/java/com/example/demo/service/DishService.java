@@ -29,6 +29,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Locale;
 import java.util.stream.Collectors;
 
 @Service
@@ -84,8 +85,13 @@ public class DishService {
     public Page<DishDto> searchWithFilters(String categoryName, String ingredientName, String namePart,
                                            Double minPrice, Double maxPrice, Pageable pageable,
                                            boolean useNativeQuery) {
+        String normalizedCategoryName = normalizeTextFilter(categoryName);
+        String normalizedIngredientName = normalizeTextFilter(ingredientName);
+        String normalizedNamePart = normalizeTextFilter(namePart);
+
         Pageable effectivePageable = normalizePageable(pageable);
-        DishSearchCacheKey key = new DishSearchCacheKey(useNativeQuery, categoryName, ingredientName, namePart,
+        DishSearchCacheKey key = new DishSearchCacheKey(useNativeQuery, normalizedCategoryName,
+            normalizedIngredientName, normalizedNamePart,
             minPrice, maxPrice, effectivePageable.getPageNumber(), effectivePageable.getPageSize(),
             effectivePageable.getSort());
 
@@ -96,7 +102,8 @@ public class DishService {
         }
 
         LOGGER.debug("Dish search cache MISS: {}", key);
-        Page<DishDto> computedResult = findWithSelectedQuery(categoryName, ingredientName, namePart, minPrice,
+        Page<DishDto> computedResult = findWithSelectedQuery(normalizedCategoryName, normalizedIngredientName,
+            normalizedNamePart, minPrice,
             maxPrice, effectivePageable, useNativeQuery);
 
         searchCache.put(key, computedResult);
@@ -272,6 +279,17 @@ public class DishService {
             return pageable;
         }
         return PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), Sort.by("id").ascending());
+    }
+
+    private String normalizeTextFilter(String value) {
+        if (value == null) {
+            return null;
+        }
+        String normalized = value.trim();
+        if (normalized.isEmpty()) {
+            return null;
+        }
+        return normalized.toLowerCase(Locale.ROOT);
     }
 
 }

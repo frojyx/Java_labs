@@ -37,3 +37,8 @@ build/
 .gitattributes
 mvnw
 mvnw.cmd
+
+### Logs ###
+logs/
+*.log
+*.log.gz

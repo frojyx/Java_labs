@@ -28,9 +28,9 @@ public interface DishRepository extends JpaRepository<Dish, Long> {
         from Dish d
         left join d.category c
         left join d.ingredients i
-        where (:categoryName is null or lower(c.name) = lower(:categoryName))
-          and (:ingredientName is null or lower(i.name) = lower(:ingredientName))
-          and (:namePart is null or lower(d.name) like lower(concat('%', :namePart, '%')))
+        where (:categoryName is null or lower(c.name) = :categoryName)
+          and (:ingredientName is null or lower(i.name) = :ingredientName)
+          and (:namePart is null or lower(d.name) like concat('%', :namePart, '%'))
           and (:minPrice is null or d.price >= :minPrice)
           and (:maxPrice is null or d.price <= :maxPrice)
         """)
@@ -57,9 +57,9 @@ public interface DishRepository extends JpaRepository<Dish, Long> {
         left join ingredients i_filter on i_filter.id = di_filter.ingredient_id
         left join dish_ingredients di_all on di_all.dish_id = d.id
         left join ingredients i_all on i_all.id = di_all.ingredient_id
-        where (:categoryName is null or lower(c.name) = lower(:categoryName))
-          and (:ingredientName is null or lower(i_filter.name) = lower(:ingredientName))
-          and (:namePart is null or lower(d.name) like lower(concat('%', :namePart, '%')))
+        where (:categoryName is null or c.name ilike cast(:categoryName as text))
+          and (:ingredientName is null or i_filter.name ilike cast(:ingredientName as text))
+          and (:namePart is null or d.name ilike concat('%', cast(:namePart as text), '%'))
           and (:minPrice is null or d.price >= :minPrice)
           and (:maxPrice is null or d.price <= :maxPrice)
         group by d.id, d.name, d.price, d.weight, c.name
@@ -70,9 +70,9 @@ public interface DishRepository extends JpaRepository<Dish, Long> {
         left join categories c on c.id = d.category_id
         left join dish_ingredients di on di.dish_id = d.id
         left join ingredients i on i.id = di.ingredient_id
-        where (:categoryName is null or lower(c.name) = lower(:categoryName))
-          and (:ingredientName is null or lower(i.name) = lower(:ingredientName))
-          and (:namePart is null or lower(d.name) like lower(concat('%', :namePart, '%')))
+        where (:categoryName is null or c.name ilike cast(:categoryName as text))
+          and (:ingredientName is null or i.name ilike cast(:ingredientName as text))
+          and (:namePart is null or d.name ilike concat('%', cast(:namePart as text), '%'))
           and (:minPrice is null or d.price >= :minPrice)
           and (:maxPrice is null or d.price <= :maxPrice)
         """,

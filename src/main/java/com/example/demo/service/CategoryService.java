@@ -3,6 +3,7 @@ package com.example.demo.service;
 import com.example.demo.dto.CategoryDto;
 import com.example.demo.entity.Category;
 import com.example.demo.entity.Dish;
+import com.example.demo.exception.ConflictException;
 import com.example.demo.exception.ResourceNotFoundException;
 import com.example.demo.mapper.CategoryMapper;
 import com.example.demo.repository.CategoryRepository;
@@ -48,6 +49,10 @@ public class CategoryService {
 
     @Transactional
     public CategoryDto save(CategoryDto categoryDto) {
+        if (categoryRepository.findByName(categoryDto.getName()).isPresent()) {
+            throw new ConflictException("Категория с названием '" + categoryDto.getName() + "' уже существует");
+        }
+
         Category category = categoryMapper.toEntity(categoryDto);
         Category savedCategory = categoryRepository.save(category);
         dishService.invalidateSearchCache();
@@ -58,6 +63,13 @@ public class CategoryService {
     public CategoryDto update(Long id, CategoryDto categoryDto) {
         Category category = categoryRepository.findById(id)
             .orElseThrow(() -> new ResourceNotFoundException(CATEGORY_WITH_ID_PREFIX + id + NOT_FOUND_SUFFIX));
+
+        categoryRepository.findByName(categoryDto.getName())
+            .filter(existingCategory -> !existingCategory.getId().equals(id))
+            .ifPresent(existingCategory -> {
+                throw new ConflictException("Категория с названием '" + categoryDto.getName() + "' уже существует");
+            });
+
         category.setName(categoryDto.getName());
         Category updatedCategory = categoryRepository.save(category);
         dishService.invalidateSearchCache();
