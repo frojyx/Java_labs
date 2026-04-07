@@ -23,24 +23,28 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(ResourceNotFoundException.class)
     public ResponseEntity<ApiErrorResponse> handleNotFound(ResourceNotFoundException exception,
                                                            HttpServletRequest request) {
+        logApiException(HttpStatus.NOT_FOUND, exception.getMessage());
         return buildResponse(HttpStatus.NOT_FOUND, exception.getMessage(), request, null);
     }
 
     @ExceptionHandler(BadRequestException.class)
     public ResponseEntity<ApiErrorResponse> handleBadRequest(BadRequestException exception,
                                                              HttpServletRequest request) {
+        logApiException(HttpStatus.BAD_REQUEST, exception.getMessage());
         return buildResponse(HttpStatus.BAD_REQUEST, exception.getMessage(), request, null);
     }
 
     @ExceptionHandler(ConflictException.class)
     public ResponseEntity<ApiErrorResponse> handleConflict(ConflictException exception,
                                                            HttpServletRequest request) {
+        logApiException(HttpStatus.CONFLICT, exception.getMessage());
         return buildResponse(HttpStatus.CONFLICT, exception.getMessage(), request, null);
     }
 
     @ExceptionHandler(UnprocessableEntityException.class)
     public ResponseEntity<ApiErrorResponse> handleUnprocessable(UnprocessableEntityException exception,
                                                                 HttpServletRequest request) {
+        logApiException(HttpStatus.UNPROCESSABLE_ENTITY, exception.getMessage());
         return buildResponse(HttpStatus.UNPROCESSABLE_ENTITY, exception.getMessage(), request, null);
     }
 
@@ -53,9 +57,11 @@ public class GlobalExceptionHandler {
             .map(this::mapFieldError)
             .toList();
 
+        logApiException(HttpStatus.BAD_REQUEST, "Validation error in request body");
+
         return buildResponse(
             HttpStatus.BAD_REQUEST,
-            "Ошибка валидации входных данных",
+            "Validation error in request body",
             request,
             validationErrors
         );
@@ -69,9 +75,11 @@ public class GlobalExceptionHandler {
             .map(violation -> new ApiValidationError(violation.getPropertyPath().toString(), violation.getMessage()))
             .toList();
 
+        logApiException(HttpStatus.BAD_REQUEST, "Validation error in request parameters");
+
         return buildResponse(
             HttpStatus.BAD_REQUEST,
-            "Ошибка валидации параметров запроса",
+            "Validation error in request parameters",
             request,
             validationErrors
         );
@@ -80,31 +88,33 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(MethodArgumentTypeMismatchException.class)
     public ResponseEntity<ApiErrorResponse> handleTypeMismatch(MethodArgumentTypeMismatchException exception,
                                                                HttpServletRequest request) {
-        String message = "Некорректное значение параметра '" + exception.getName() + "'";
+        String message = "Invalid value for parameter '" + exception.getName() + "'";
+        logApiException(HttpStatus.BAD_REQUEST, message);
         return buildResponse(HttpStatus.BAD_REQUEST, message, request, null);
     }
 
     @ExceptionHandler(NoHandlerFoundException.class)
     public ResponseEntity<ApiErrorResponse> handleNoHandlerFound(NoHandlerFoundException exception,
                                                                  HttpServletRequest request) {
-        return buildResponse(HttpStatus.NOT_FOUND, "Endpoint не найден", request, null);
+        logApiException(HttpStatus.NOT_FOUND, "Endpoint not found");
+        return buildResponse(HttpStatus.NOT_FOUND, "Endpoint not found", request, null);
     }
 
     @ExceptionHandler(RuntimeException.class)
     public ResponseEntity<ApiErrorResponse> handleRuntime(RuntimeException exception,
                                                           HttpServletRequest request) {
-        LOGGER.warn("Runtime exception for path {}: {}", request.getRequestURI(), exception.getMessage());
         HttpStatus status = resolveStatus(exception.getMessage());
+        logApiException(status, exception.getMessage());
         return buildResponse(status, exception.getMessage(), request, null);
     }
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiErrorResponse> handleGenericException(Exception exception,
                                                                    HttpServletRequest request) {
-        LOGGER.error("Unhandled exception for path {}", request.getRequestURI(), exception);
+        logApiException(HttpStatus.INTERNAL_SERVER_ERROR, "Internal server error", exception);
         return buildResponse(
             HttpStatus.INTERNAL_SERVER_ERROR,
-            "Внутренняя ошибка сервера",
+            "Internal server error",
             request,
             null
         );
@@ -115,10 +125,18 @@ public class GlobalExceptionHandler {
     }
 
     private HttpStatus resolveStatus(String message) {
-        if (message != null && message.toLowerCase().contains("не найден")) {
+        if (message != null && message.toLowerCase().contains("not found")) {
             return HttpStatus.NOT_FOUND;
         }
         return HttpStatus.BAD_REQUEST;
+    }
+
+    private void logApiException(HttpStatus status, String message) {
+        LOGGER.warn("API exception [{}]: {}", status.value(), message);
+    }
+
+    private void logApiException(HttpStatus status, String message, Exception exception) {
+        LOGGER.error("API exception [{}]: {}", status.value(), message, exception);
     }
 
     private ResponseEntity<ApiErrorResponse> buildResponse(HttpStatus status, String message,
