@@ -12,11 +12,13 @@ on:
   workflow_dispatch:
 
 jobs:
-  build-test-sonar:
+  build-test-sonarcloud:
     runs-on: ubuntu-latest
     env:
       SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-      SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+      SONAR_HOST_URL: https://sonarcloud.io
+      SONAR_ORGANIZATION: ${{ secrets.SONAR_ORGANIZATION }}
+      SONAR_PROJECT_KEY: ${{ secrets.SONAR_PROJECT_KEY }}
 
     steps:
       - name: Checkout
@@ -57,16 +59,22 @@ jobs:
             mvn -B clean verify
           fi
 
-      - name: SonarQube scan
-        if: ${{ env.SONAR_TOKEN != '' && env.SONAR_HOST_URL != '' }}
+      - name: SonarCloud scan
+        if: ${{ env.SONAR_TOKEN != '' && env.SONAR_ORGANIZATION != '' && env.SONAR_PROJECT_KEY != '' }}
         working-directory: ${{ env.PROJECT_DIR }}
         run: |
           if [ -f "mvnw" ]; then
             ./mvnw -B sonar:sonar \
               -Dsonar.token="${SONAR_TOKEN}" \
-              -Dsonar.host.url="${SONAR_HOST_URL}"
+              -Dsonar.host.url="${SONAR_HOST_URL}" \
+              -Dsonar.organization="${SONAR_ORGANIZATION}" \
+              -Dsonar.projectKey="${SONAR_PROJECT_KEY}" \
+              -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml
           else
             mvn -B sonar:sonar \
               -Dsonar.token="${SONAR_TOKEN}" \
-              -Dsonar.host.url="${SONAR_HOST_URL}"
+              -Dsonar.host.url="${SONAR_HOST_URL}" \
+              -Dsonar.organization="${SONAR_ORGANIZATION}" \
+              -Dsonar.projectKey="${SONAR_PROJECT_KEY}" \
+              -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml
           fi
