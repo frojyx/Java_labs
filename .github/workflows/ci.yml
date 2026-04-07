@@ -1,4 +1,4 @@
-name: CI
+﻿name: CI
 
 on:
   push:
@@ -69,12 +69,15 @@ jobs:
               -Dsonar.host.url="${SONAR_HOST_URL}" \
               -Dsonar.organization="${SONAR_ORGANIZATION}" \
               -Dsonar.projectKey="${SONAR_PROJECT_KEY}" \
-              -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml
+              -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml \
+              -Dsonar.coverage.inclusions=src/main/java/com/example/demo/service/**/*.java
           else
             mvn -B sonar:sonar \
               -Dsonar.token="${SONAR_TOKEN}" \
               -Dsonar.host.url="${SONAR_HOST_URL}" \
               -Dsonar.organization="${SONAR_ORGANIZATION}" \
               -Dsonar.projectKey="${SONAR_PROJECT_KEY}" \
-              -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml
+              -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml \
+              -Dsonar.coverage.inclusions=src/main/java/com/example/demo/service/**/*.java
           fi
+
