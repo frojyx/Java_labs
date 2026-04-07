@@ -83,7 +83,8 @@ class ClientServiceTest {
     @Test
     void updateThrowsWhenMissing() {
         when(clientRepository.findById(1L)).thenReturn(Optional.empty());
-        assertThrows(ResourceNotFoundException.class, () -> clientService.update(1L, new ClientDto()));
+        ClientDto clientDto = new ClientDto();
+        assertThrows(ResourceNotFoundException.class, () -> clientService.update(1L, clientDto));
     }
 
     @Test

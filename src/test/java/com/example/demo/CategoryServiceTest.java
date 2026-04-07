@@ -99,7 +99,8 @@ class CategoryServiceTest {
     @Test
     void updateThrowsWhenCategoryMissing() {
         when(categoryRepository.findById(1L)).thenReturn(Optional.empty());
-        assertThrows(ResourceNotFoundException.class, () -> categoryService.update(1L, new CategoryDto()));
+        CategoryDto categoryDto = new CategoryDto();
+        assertThrows(ResourceNotFoundException.class, () -> categoryService.update(1L, categoryDto));
     }
 
     @Test

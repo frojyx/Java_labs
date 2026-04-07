@@ -149,7 +149,8 @@ class OrderServiceTest {
 
     @Test
     void createOrdersBulkThrowsForEmptyPayload() {
-        assertThrows(BadRequestException.class, () -> orderService.createOrdersBulk(List.of()));
+        List<OrderDto> emptyPayload = List.of();
+        assertThrows(BadRequestException.class, () -> orderService.createOrdersBulk(emptyPayload));
         assertThrows(BadRequestException.class, () -> orderService.createOrdersBulk(null));
     }
 
@@ -160,9 +161,10 @@ class OrderServiceTest {
         when(clientRepository.save(any(Client.class))).thenAnswer(invocation -> invocation.getArgument(0));
         when(dishRepository.findByNameIn(List.of("Pasta"))).thenReturn(List.of(buildDish(1L, "Pasta")));
         when(orderRepository.save(any(Order.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        List<OrderDto> bulkPayload = List.of(first, second);
 
         assertThrows(RuntimeException.class,
-            () -> orderService.createOrdersBulkWithoutTransactionDemo(List.of(first, second)));
+            () -> orderService.createOrdersBulkWithoutTransactionDemo(bulkPayload));
         verify(orderRepository, times(1)).save(any(Order.class));
     }
 
@@ -190,9 +192,10 @@ class OrderServiceTest {
         when(clientRepository.save(any(Client.class))).thenAnswer(invocation -> invocation.getArgument(0));
         when(dishRepository.findByNameIn(List.of("Pasta"))).thenReturn(List.of(buildDish(1L, "Pasta")));
         when(orderRepository.save(any(Order.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        List<OrderDto> bulkPayload = List.of(first, second);
 
         assertThrows(RuntimeException.class,
-            () -> orderService.createOrdersBulkWithTransactionDemo(List.of(first, second)));
+            () -> orderService.createOrdersBulkWithTransactionDemo(bulkPayload));
     }
 
     @Test

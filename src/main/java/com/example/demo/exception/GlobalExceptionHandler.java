@@ -103,9 +103,8 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(RuntimeException.class)
     public ResponseEntity<ApiErrorResponse> handleRuntime(RuntimeException exception,
                                                           HttpServletRequest request) {
-        HttpStatus status = resolveStatus(exception.getMessage());
-        logApiException(status, exception.getMessage());
-        return buildResponse(status, exception.getMessage(), request, null);
+        logApiException(HttpStatus.INTERNAL_SERVER_ERROR, exception.getMessage(), exception);
+        return buildResponse(HttpStatus.INTERNAL_SERVER_ERROR, exception.getMessage(), request, null);
     }
 
     @ExceptionHandler(Exception.class)
@@ -122,13 +121,6 @@ public class GlobalExceptionHandler {
 
     private ApiValidationError mapFieldError(FieldError fieldError) {
         return new ApiValidationError(fieldError.getField(), fieldError.getDefaultMessage());
-    }
-
-    private HttpStatus resolveStatus(String message) {
-        if (message != null && message.toLowerCase().contains("not found")) {
-            return HttpStatus.NOT_FOUND;
-        }
-        return HttpStatus.BAD_REQUEST;
     }
 
     private void logApiException(HttpStatus status, String message) {

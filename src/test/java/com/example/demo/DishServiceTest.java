@@ -223,7 +223,8 @@ class DishServiceTest {
     @Test
     void updateThrowsWhenDishMissing() {
         when(dishRepository.findById(1L)).thenReturn(Optional.empty());
-        assertThrows(RuntimeException.class, () -> dishService.update(1L, new DishDto()));
+        DishDto dishDto = new DishDto();
+        assertThrows(RuntimeException.class, () -> dishService.update(1L, dishDto));
     }
 
     @Test

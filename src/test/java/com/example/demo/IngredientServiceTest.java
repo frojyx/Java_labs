@@ -92,7 +92,8 @@ class IngredientServiceTest {
     @Test
     void updateThrowsWhenMissing() {
         when(ingredientRepository.findById(1L)).thenReturn(Optional.empty());
-        assertThrows(ResourceNotFoundException.class, () -> ingredientService.update(1L, new IngredientDto()));
+        IngredientDto ingredientDto = new IngredientDto();
+        assertThrows(ResourceNotFoundException.class, () -> ingredientService.update(1L, ingredientDto));
     }
 
     @Test
