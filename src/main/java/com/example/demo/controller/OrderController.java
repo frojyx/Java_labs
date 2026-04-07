@@ -21,7 +21,7 @@ import java.util.List;
 @RestController
 @Validated
 @RequestMapping("/api/orders")
-@Tag(name = "Orders", description = "Операции с заказами")
+@Tag(name = "Orders", description = "???????? ? ????????")
 public class OrderController {
     private final OrderService orderService;
 
@@ -30,45 +30,51 @@ public class OrderController {
     }
 
     @GetMapping
-    @Operation(summary = "Получить все заказы")
+    @Operation(summary = "???????? ??? ??????")
     public List<OrderDto> getAllOrders() {
         return orderService.findAll();
     }
 
     @GetMapping("/{id}")
-    @Operation(summary = "Получить заказ по ID")
-    public OrderDto getOrderById(@PathVariable @Positive(message = "ID должен быть больше 0") Long id) {
+    @Operation(summary = "???????? ????? ?? ID")
+    public OrderDto getOrderById(@PathVariable @Positive(message = "ID ?????? ???? ?????? 0") Long id) {
         return orderService.findById(id);
     }
 
     @PostMapping
-    @Operation(summary = "Создать заказ")
+    @Operation(summary = "??????? ?????")
     public OrderDto createOrder(@Valid @RequestBody OrderDto orderDto) {
         return orderService.createNewOrder(orderDto);
     }
 
-    @PostMapping("/no-transaction")
-    @Operation(summary = "Демо создания заказа без транзакции")
-    public void createOrderDemoWithoutTransaction(@Valid @RequestBody OrderDto orderDto) {
-        orderService.createOrderWithoutTransactionDemo(orderDto);
+    @PostMapping("/bulk")
+    @Operation(summary = "???????? ???????? ???????")
+    public List<OrderDto> createOrdersBulk(@Valid @RequestBody List<@Valid OrderDto> orderDtos) {
+        return orderService.createOrdersBulk(orderDtos);
     }
 
-    @PostMapping("/transaction")
-    @Operation(summary = "Демо создания заказа с транзакцией")
-    public void createOrderDemoWithTransaction(@Valid @RequestBody OrderDto orderDto) {
-        orderService.createOrderWithTransactionDemo(orderDto);
+    @PostMapping("/bulk/no-transaction")
+    @Operation(summary = "???? bulk-???????? ??? ??????????")
+    public List<OrderDto> createOrdersBulkWithoutTransaction(@Valid @RequestBody List<@Valid OrderDto> orderDtos) {
+        return orderService.createOrdersBulkWithoutTransactionDemo(orderDtos);
+    }
+
+    @PostMapping("/bulk/transaction")
+    @Operation(summary = "???? bulk-???????? ? ???????????")
+    public List<OrderDto> createOrdersBulkWithTransaction(@Valid @RequestBody List<@Valid OrderDto> orderDtos) {
+        return orderService.createOrdersBulkWithTransactionDemo(orderDtos);
     }
 
     @PutMapping("/{id}")
-    @Operation(summary = "Обновить заказ")
-    public OrderDto updateOrder(@PathVariable @Positive(message = "ID должен быть больше 0") Long id,
+    @Operation(summary = "???????? ?????")
+    public OrderDto updateOrder(@PathVariable @Positive(message = "ID ?????? ???? ?????? 0") Long id,
                                 @Valid @RequestBody OrderDto orderDto) {
         return orderService.update(id, orderDto);
     }
 
     @DeleteMapping("/{id}")
-    @Operation(summary = "Удалить заказ")
-    public void deleteOrder(@PathVariable @Positive(message = "ID должен быть больше 0") Long id) {
+    @Operation(summary = "??????? ?????")
+    public void deleteOrder(@PathVariable @Positive(message = "ID ?????? ???? ?????? 0") Long id) {
         orderService.deleteById(id);
     }
 }

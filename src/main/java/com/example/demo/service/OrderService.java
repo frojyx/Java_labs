@@ -14,8 +14,10 @@ import com.example.demo.repository.OrderRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -51,30 +53,23 @@ public class OrderService {
 
     @Transactional
     public OrderDto createNewOrder(OrderDto orderDto) {
-        List<String> normalizedDishNames = validateAndNormalizeDishNames(orderDto.getDishNames());
-
-        Client client = new Client();
-        client.setFirstName(orderDto.getClientFirstName());
-        client.setLastName(orderDto.getClientLastName());
-        clientRepository.save(client);
-
-        List<Dish> dishes = resolveDishesOrThrow(normalizedDishNames);
-
-        Order order = new Order();
-        order.setClient(client);
-        order.setDishes(dishes);
-        Order savedOrder = orderRepository.save(order);
-
-        return orderMapper.toDto(savedOrder);
-    }
-
-    public void createOrderWithoutTransactionDemo(OrderDto orderDto) {
-        createOrderWithFailure(orderDto);
+        return createOrderInternal(orderDto);
     }
 
     @Transactional
-    public void createOrderWithTransactionDemo(OrderDto orderDto) {
-        createOrderWithFailure(orderDto);
+    public List<OrderDto> createOrdersBulk(List<OrderDto> orderDtos) {
+        return requireBulkPayload(orderDtos).stream()
+            .map(this::createOrderInternal)
+            .toList();
+    }
+
+    public List<OrderDto> createOrdersBulkWithoutTransactionDemo(List<OrderDto> orderDtos) {
+        return createBulkOrdersWithFailure(orderDtos);
+    }
+
+    @Transactional
+    public List<OrderDto> createOrdersBulkWithTransactionDemo(List<OrderDto> orderDtos) {
+        return createBulkOrdersWithFailure(orderDtos);
     }
 
     @Transactional
@@ -106,7 +101,23 @@ public class OrderService {
         }
     }
 
-    private void createOrderWithFailure(OrderDto orderDto) {
+    private List<OrderDto> createBulkOrdersWithFailure(List<OrderDto> orderDtos) {
+        List<OrderDto> preparedOrders = requireBulkPayload(orderDtos);
+        List<OrderDto> createdOrders = new ArrayList<>();
+
+        for (int index = 0; index < preparedOrders.size(); index++) {
+            OrderDto createdOrder = createOrderInternal(preparedOrders.get(index));
+            createdOrders.add(createdOrder);
+
+            if (preparedOrders.size() > 1) {
+                throw new RuntimeException("Artificial failure after saving the first order in bulk.");
+            }
+        }
+
+        return createdOrders;
+    }
+
+    private OrderDto createOrderInternal(OrderDto orderDto) {
         List<String> normalizedDishNames = validateAndNormalizeDishNames(orderDto.getDishNames());
 
         Client client = new Client();
@@ -119,17 +130,21 @@ public class OrderService {
         Order order = new Order();
         order.setClient(savedClient);
         order.setDishes(dishes);
-        orderRepository.save(order);
+        Order savedOrder = orderRepository.save(order);
 
-        throw new RuntimeException("Artificial failure after saving related entities.");
+        return orderMapper.toDto(savedOrder);
+    }
+
+    private List<OrderDto> requireBulkPayload(List<OrderDto> orderDtos) {
+        return Optional.ofNullable(orderDtos)
+            .filter(payload -> !payload.isEmpty())
+            .orElseThrow(() -> new BadRequestException("Order list is required"));
     }
 
     private List<String> validateAndNormalizeDishNames(List<String> dishNames) {
-        if (dishNames == null) {
-            throw new BadRequestException("Dish list is required");
-        }
-
-        List<String> normalizedDishNames = dishNames.stream()
+        List<String> normalizedDishNames = Optional.ofNullable(dishNames)
+            .orElseThrow(() -> new BadRequestException("Dish list is required"))
+            .stream()
             .map(name -> name == null ? "" : name.trim())
             .toList();
 
