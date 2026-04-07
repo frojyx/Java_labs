@@ -69,15 +69,17 @@ jobs:
               -Dsonar.host.url="${SONAR_HOST_URL}" \
               -Dsonar.organization="${SONAR_ORGANIZATION}" \
               -Dsonar.projectKey="${SONAR_PROJECT_KEY}" \
+              -Dsonar.sources=src/main/java/com/example/demo/service \
               -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml \
-              -Dsonar.coverage.inclusions=src/main/java/com/example/demo/service/**/*.java
+              -Dsonar.inclusions=**/*.java
           else
             mvn -B sonar:sonar \
               -Dsonar.token="${SONAR_TOKEN}" \
               -Dsonar.host.url="${SONAR_HOST_URL}" \
               -Dsonar.organization="${SONAR_ORGANIZATION}" \
               -Dsonar.projectKey="${SONAR_PROJECT_KEY}" \
+              -Dsonar.sources=src/main/java/com/example/demo/service \
               -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml \
-              -Dsonar.coverage.inclusions=src/main/java/com/example/demo/service/**/*.java
+              -Dsonar.inclusions=**/*.java
           fi
 
