@@ -60,11 +60,9 @@ public class OrderService {
     public List<OrderDto> createOrdersBulk(List<OrderDto> orderDtos) {
         List<OrderDto> preparedOrders = requireBulkPayload(orderDtos);
 
-        List<OrderDto> createdOrders = preparedOrders.stream()
+        return preparedOrders.stream()
             .map(this::createOrderInternal)
             .toList();
-
-        return createdOrders;
     }
 
     public List<OrderDto> createOrdersBulkWithoutTransactionDemo(List<OrderDto> orderDtos) {
