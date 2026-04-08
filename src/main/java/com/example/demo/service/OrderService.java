@@ -58,18 +58,30 @@ public class OrderService {
 
     @Transactional
     public List<OrderDto> createOrdersBulk(List<OrderDto> orderDtos) {
-        return requireBulkPayload(orderDtos).stream()
+        List<OrderDto> preparedOrders = requireBulkPayload(orderDtos);
+
+        List<OrderDto> createdOrders = preparedOrders.stream()
             .map(this::createOrderInternal)
             .toList();
+
+        return createdOrders;
     }
 
     public List<OrderDto> createOrdersBulkWithoutTransactionDemo(List<OrderDto> orderDtos) {
-        return createBulkOrdersWithFailure(orderDtos);
+        try {
+            return createOrdersBulkSequential(orderDtos);
+        } catch (UnprocessableEntityException exception) {
+            throw new RuntimeException(exception.getMessage(), exception);
+        }
     }
 
     @Transactional
     public List<OrderDto> createOrdersBulkWithTransactionDemo(List<OrderDto> orderDtos) {
-        return createBulkOrdersWithFailure(orderDtos);
+        try {
+            return createOrdersBulkSequential(orderDtos);
+        } catch (UnprocessableEntityException exception) {
+            throw new RuntimeException(exception.getMessage(), exception);
+        }
     }
 
     @Transactional
@@ -101,17 +113,13 @@ public class OrderService {
         }
     }
 
-    private List<OrderDto> createBulkOrdersWithFailure(List<OrderDto> orderDtos) {
+    private List<OrderDto> createOrdersBulkSequential(List<OrderDto> orderDtos) {
         List<OrderDto> preparedOrders = requireBulkPayload(orderDtos);
         List<OrderDto> createdOrders = new ArrayList<>();
 
-        for (int index = 0; index < preparedOrders.size(); index++) {
-            OrderDto createdOrder = createOrderInternal(preparedOrders.get(index));
+        for (OrderDto preparedOrder : preparedOrders) {
+            OrderDto createdOrder = createOrderInternal(preparedOrder);
             createdOrders.add(createdOrder);
-
-            if (preparedOrders.size() > 1) {
-                throw new RuntimeException("Artificial failure after saving the first order in bulk.");
-            }
         }
 
         return createdOrders;

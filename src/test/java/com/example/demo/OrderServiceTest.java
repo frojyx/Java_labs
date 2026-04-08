@@ -155,11 +155,12 @@ class OrderServiceTest {
     }
 
     @Test
-    void createOrdersBulkWithoutTransactionDemoThrowsAfterFirstSave() {
+    void createOrdersBulkWithoutTransactionDemoThrowsRuntimeWhenSecondOrderHasMissingDish() {
         OrderDto first = buildOrderDto("A", "B", List.of("Pasta"));
-        OrderDto second = buildOrderDto("C", "D", List.of("Soup"));
+        OrderDto second = buildOrderDto("C", "D", List.of("MissingDish"));
         when(clientRepository.save(any(Client.class))).thenAnswer(invocation -> invocation.getArgument(0));
         when(dishRepository.findByNameIn(List.of("Pasta"))).thenReturn(List.of(buildDish(1L, "Pasta")));
+        when(dishRepository.findByNameIn(List.of("MissingDish"))).thenReturn(List.of());
         when(orderRepository.save(any(Order.class))).thenAnswer(invocation -> invocation.getArgument(0));
         List<OrderDto> bulkPayload = List.of(first, second);
 
@@ -186,16 +187,18 @@ class OrderServiceTest {
     }
 
     @Test
-    void createOrdersBulkWithTransactionDemoThrowsAfterFirstSave() {
+    void createOrdersBulkWithTransactionDemoThrowsRuntimeWhenSecondOrderHasMissingDish() {
         OrderDto first = buildOrderDto("A", "B", List.of("Pasta"));
-        OrderDto second = buildOrderDto("C", "D", List.of("Soup"));
+        OrderDto second = buildOrderDto("C", "D", List.of("MissingDish"));
         when(clientRepository.save(any(Client.class))).thenAnswer(invocation -> invocation.getArgument(0));
         when(dishRepository.findByNameIn(List.of("Pasta"))).thenReturn(List.of(buildDish(1L, "Pasta")));
+        when(dishRepository.findByNameIn(List.of("MissingDish"))).thenReturn(List.of());
         when(orderRepository.save(any(Order.class))).thenAnswer(invocation -> invocation.getArgument(0));
         List<OrderDto> bulkPayload = List.of(first, second);
 
         assertThrows(RuntimeException.class,
             () -> orderService.createOrdersBulkWithTransactionDemo(bulkPayload));
+        verify(orderRepository, times(1)).save(any(Order.class));
     }
 
     @Test

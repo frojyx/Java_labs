@@ -14,8 +14,6 @@ import com.example.demo.repository.DishRepository;
 import com.example.demo.repository.DishSearchNativeProjection;
 import com.example.demo.repository.IngredientRepository;
 import com.example.demo.repository.OrderRepository;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -28,14 +26,12 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Locale;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
 public class DishService {
-    private static final Logger LOGGER = LoggerFactory.getLogger(DishService.class);
-
     private final DishRepository dishRepository;
 
     private final DishMapper dishMapper;
@@ -97,11 +93,9 @@ public class DishService {
 
         Page<DishDto> cachedResult = searchCache.get(key);
         if (cachedResult != null) {
-            LOGGER.debug("Dish search cache HIT: {}", key);
             return cachedResult;
         }
 
-        LOGGER.debug("Dish search cache MISS: {}", key);
         Page<DishDto> computedResult = findWithSelectedQuery(normalizedCategoryName, normalizedIngredientName,
             normalizedNamePart, minPrice,
             maxPrice, effectivePageable, useNativeQuery);
@@ -293,4 +287,3 @@ public class DishService {
         return normalized.toLowerCase(Locale.ROOT);
     }
 }
-

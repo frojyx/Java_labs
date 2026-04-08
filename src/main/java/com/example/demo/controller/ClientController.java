@@ -21,7 +21,7 @@ import java.util.List;
 @RestController
 @Validated
 @RequestMapping("/api/clients")
-@Tag(name = "Clients", description = "Операции с клиентами")
+@Tag(name = "Clients", description = "Operations with clients")
 public class ClientController {
     private final ClientService clientService;
 
@@ -30,33 +30,33 @@ public class ClientController {
     }
 
     @GetMapping
-    @Operation(summary = "Получить всех клиентов")
+    @Operation(summary = "Get all clients")
     public List<ClientDto> getAllClients() {
         return clientService.findAll();
     }
 
     @GetMapping("/{id}")
-    @Operation(summary = "Получить клиента по ID")
-    public ClientDto getClientById(@PathVariable @Positive(message = "ID должен быть больше 0") Long id) {
+    @Operation(summary = "Get client by ID")
+    public ClientDto getClientById(@PathVariable @Positive(message = "ID must be greater than 0") Long id) {
         return clientService.findById(id);
     }
 
     @PostMapping
-    @Operation(summary = "Создать клиента")
+    @Operation(summary = "Create client")
     public ClientDto createClient(@Valid @RequestBody ClientDto clientDto) {
         return clientService.save(clientDto);
     }
 
     @PutMapping("/{id}")
-    @Operation(summary = "Обновить клиента")
-    public ClientDto updateClient(@PathVariable @Positive(message = "ID должен быть больше 0") Long id,
+    @Operation(summary = "Update client")
+    public ClientDto updateClient(@PathVariable @Positive(message = "ID must be greater than 0") Long id,
                                   @Valid @RequestBody ClientDto clientDto) {
         return clientService.update(id, clientDto);
     }
 
     @DeleteMapping("/{id}")
-    @Operation(summary = "Удалить клиента")
-    public void deleteClient(@PathVariable @Positive(message = "ID должен быть больше 0") Long id) {
+    @Operation(summary = "Delete client")
+    public void deleteClient(@PathVariable @Positive(message = "ID must be greater than 0") Long id) {
         clientService.deleteById(id);
     }
 }

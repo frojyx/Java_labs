@@ -21,7 +21,7 @@ import java.util.List;
 @RestController
 @Validated
 @RequestMapping("/api/orders")
-@Tag(name = "Orders", description = "???????? ? ????????")
+@Tag(name = "Orders", description = "Operations with orders")
 public class OrderController {
     private final OrderService orderService;
 
@@ -30,51 +30,51 @@ public class OrderController {
     }
 
     @GetMapping
-    @Operation(summary = "???????? ??? ??????")
+    @Operation(summary = "Get all orders")
     public List<OrderDto> getAllOrders() {
         return orderService.findAll();
     }
 
     @GetMapping("/{id}")
-    @Operation(summary = "???????? ????? ?? ID")
-    public OrderDto getOrderById(@PathVariable @Positive(message = "ID ?????? ???? ?????? 0") Long id) {
+    @Operation(summary = "Get order by ID")
+    public OrderDto getOrderById(@PathVariable @Positive(message = "ID must be greater than 0") Long id) {
         return orderService.findById(id);
     }
 
     @PostMapping
-    @Operation(summary = "??????? ?????")
+    @Operation(summary = "Create order")
     public OrderDto createOrder(@Valid @RequestBody OrderDto orderDto) {
         return orderService.createNewOrder(orderDto);
     }
 
     @PostMapping("/bulk")
-    @Operation(summary = "???????? ???????? ???????")
+    @Operation(summary = "Create orders in bulk")
     public List<OrderDto> createOrdersBulk(@Valid @RequestBody List<@Valid OrderDto> orderDtos) {
         return orderService.createOrdersBulk(orderDtos);
     }
 
     @PostMapping("/bulk/no-transaction")
-    @Operation(summary = "???? bulk-???????? ??? ??????????")
+    @Operation(summary = "Demo bulk operation without transaction")
     public List<OrderDto> createOrdersBulkWithoutTransaction(@Valid @RequestBody List<@Valid OrderDto> orderDtos) {
         return orderService.createOrdersBulkWithoutTransactionDemo(orderDtos);
     }
 
     @PostMapping("/bulk/transaction")
-    @Operation(summary = "???? bulk-???????? ? ???????????")
+    @Operation(summary = "Demo bulk operation with transaction")
     public List<OrderDto> createOrdersBulkWithTransaction(@Valid @RequestBody List<@Valid OrderDto> orderDtos) {
         return orderService.createOrdersBulkWithTransactionDemo(orderDtos);
     }
 
     @PutMapping("/{id}")
-    @Operation(summary = "???????? ?????")
-    public OrderDto updateOrder(@PathVariable @Positive(message = "ID ?????? ???? ?????? 0") Long id,
+    @Operation(summary = "Update order")
+    public OrderDto updateOrder(@PathVariable @Positive(message = "ID must be greater than 0") Long id,
                                 @Valid @RequestBody OrderDto orderDto) {
         return orderService.update(id, orderDto);
     }
 
     @DeleteMapping("/{id}")
-    @Operation(summary = "??????? ?????")
-    public void deleteOrder(@PathVariable @Positive(message = "ID ?????? ???? ?????? 0") Long id) {
+    @Operation(summary = "Delete order")
+    public void deleteOrder(@PathVariable @Positive(message = "ID must be greater than 0") Long id) {
         orderService.deleteById(id);
     }
 }

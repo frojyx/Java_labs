@@ -21,7 +21,7 @@ import java.util.List;
 @RestController
 @Validated
 @RequestMapping("/api/ingredients")
-@Tag(name = "Ingredients", description = "Операции с ингредиентами")
+@Tag(name = "Ingredients", description = "Operations with ingredients")
 public class IngredientController {
     private final IngredientService ingredientService;
 
@@ -30,33 +30,33 @@ public class IngredientController {
     }
 
     @GetMapping
-    @Operation(summary = "Получить все ингредиенты")
+    @Operation(summary = "Get all ingredients")
     public List<IngredientDto> getAllIngredients() {
         return ingredientService.findAll();
     }
 
     @GetMapping("/{id}")
-    @Operation(summary = "Получить ингредиент по ID")
-    public IngredientDto getIngredientById(@PathVariable @Positive(message = "ID должен быть больше 0") Long id) {
+    @Operation(summary = "Get ingredient by ID")
+    public IngredientDto getIngredientById(@PathVariable @Positive(message = "ID must be greater than 0") Long id) {
         return ingredientService.findById(id);
     }
 
     @PostMapping
-    @Operation(summary = "Создать ингредиент")
+    @Operation(summary = "Create ingredient")
     public IngredientDto createIngredient(@Valid @RequestBody IngredientDto ingredientDto) {
         return ingredientService.save(ingredientDto);
     }
 
     @PutMapping("/{id}")
-    @Operation(summary = "Обновить ингредиент")
-    public IngredientDto updateIngredient(@PathVariable @Positive(message = "ID должен быть больше 0") Long id,
+    @Operation(summary = "Update ingredient")
+    public IngredientDto updateIngredient(@PathVariable @Positive(message = "ID must be greater than 0") Long id,
                                           @Valid @RequestBody IngredientDto ingredientDto) {
         return ingredientService.update(id, ingredientDto);
     }
 
     @DeleteMapping("/{id}")
-    @Operation(summary = "Удалить ингредиент")
-    public void deleteIngredient(@PathVariable @Positive(message = "ID должен быть больше 0") Long id) {
+    @Operation(summary = "Delete ingredient")
+    public void deleteIngredient(@PathVariable @Positive(message = "ID must be greater than 0") Long id) {
         ingredientService.deleteById(id);
     }
 }

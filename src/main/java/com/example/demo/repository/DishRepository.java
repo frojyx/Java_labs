@@ -65,17 +65,17 @@ public interface DishRepository extends JpaRepository<Dish, Long> {
         group by d.id, d.name, d.price, d.weight, c.name
         """,
         countQuery = """
-        select count(distinct d.id)
-        from dishes d
-        left join categories c on c.id = d.category_id
-        left join dish_ingredients di on di.dish_id = d.id
-        left join ingredients i on i.id = di.ingredient_id
-        where (:categoryName is null or c.name ilike cast(:categoryName as text))
-          and (:ingredientName is null or i.name ilike cast(:ingredientName as text))
-          and (:namePart is null or d.name ilike concat('%', cast(:namePart as text), '%'))
-          and (:minPrice is null or d.price >= :minPrice)
-          and (:maxPrice is null or d.price <= :maxPrice)
-        """,
+            select count(distinct d.id)
+            from dishes d
+            left join categories c on c.id = d.category_id
+            left join dish_ingredients di on di.dish_id = d.id
+            left join ingredients i on i.id = di.ingredient_id
+            where (:categoryName is null or c.name ilike cast(:categoryName as text))
+              and (:ingredientName is null or i.name ilike cast(:ingredientName as text))
+              and (:namePart is null or d.name ilike concat('%', cast(:namePart as text), '%'))
+              and (:minPrice is null or d.price >= :minPrice)
+              and (:maxPrice is null or d.price <= :maxPrice)
+            """,
         nativeQuery = true)
     Page<DishSearchNativeProjection> searchWithFiltersNative(
         @Param("categoryName") String categoryName,

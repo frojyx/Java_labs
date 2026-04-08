@@ -32,7 +32,7 @@ import java.util.Map;
 @RestController
 @Validated
 @RequestMapping("/api")
-@Tag(name = "Dishes", description = "Операции с блюдами")
+@Tag(name = "Dishes", description = "Operations with dishes")
 public class DishController {
     private final DishService dishService;
 
@@ -41,40 +41,40 @@ public class DishController {
     }
 
     @PostMapping("/dish")
-    @Operation(summary = "Создать блюдо")
+    @Operation(summary = "Create dish")
     public DishDto createDish(@Valid @RequestBody DishDto dishDto) {
         return dishService.save(dishDto);
     }
 
     @GetMapping("/dishAll")
-    @Operation(summary = "Получить все блюда")
+    @Operation(summary = "Get all dishes")
     public List<DishDto> getAllDishes() {
         return dishService.findAll();
     }
 
     @GetMapping("/dish/search")
-    @Operation(summary = "Поиск блюд по фильтрам")
+    @Operation(summary = "Search dishes with filters")
     public Page<DishDto> searchDishes(
-        @Parameter(description = "Название категории") 
+        @Parameter(description = "Category name")
         @RequestParam(required = false) String categoryName,
-        @Parameter(description = "Название ингредиента")
+        @Parameter(description = "Ingredient name")
         @RequestParam(required = false) String ingredientName,
-        @Parameter(description = "Часть названия блюда")
+        @Parameter(description = "Part of dish name")
         @RequestParam(required = false) String namePart,
-        @DecimalMin(value = "0.0", message = "Минимальная цена не может быть отрицательной")
-        @Parameter(description = "Минимальная цена")
+        @DecimalMin(value = "0.0", message = "Min price must be non-negative")
+        @Parameter(description = "Minimum price")
         @RequestParam(required = false) Double minPrice,
-        @DecimalMin(value = "0.0", message = "Максимальная цена не может быть отрицательной")
-        @Parameter(description = "Максимальная цена")
+        @DecimalMin(value = "0.0", message = "Max price must be non-negative")
+        @Parameter(description = "Maximum price")
         @RequestParam(required = false) Double maxPrice,
-        @Parameter(description = "Использовать native query")
+        @Parameter(description = "Use native query")
         @RequestParam(defaultValue = "false") boolean useNativeQuery,
-        @PositiveOrZero(message = "Номер страницы не может быть отрицательным")
-        @Parameter(description = "Номер страницы", example = "0")
+        @PositiveOrZero(message = "Page number must be non-negative")
+        @Parameter(description = "Page number", example = "0")
         @RequestParam(defaultValue = "0") int page,
-        @Min(value = 1, message = "Размер страницы должен быть не меньше 1")
-        @Max(value = 100, message = "Размер страницы не должен превышать 100")
-        @Parameter(description = "Размер страницы", example = "20")
+        @Min(value = 1, message = "Page size must be at least 1")
+        @Max(value = 100, message = "Page size must be at most 100")
+        @Parameter(description = "Page size", example = "20")
         @RequestParam(defaultValue = "20") int size,
         Pageable pageable
     ) {
@@ -85,26 +85,26 @@ public class DishController {
     }
 
     @GetMapping("/dish/{id}")
-    @Operation(summary = "Получить блюдо по ID")
-    public DishDto getIdByDish(@PathVariable @Positive(message = "ID должен быть больше 0") Long id) {
+    @Operation(summary = "Get dish by ID")
+    public DishDto getIdByDish(@PathVariable @Positive(message = "ID must be greater than 0") Long id) {
         return dishService.findById(id);
     }
 
     @PutMapping("/dish/{id}")
-    @Operation(summary = "Обновить блюдо")
-    public DishDto updateDish(@PathVariable @Positive(message = "ID должен быть больше 0") Long id,
+    @Operation(summary = "Update dish")
+    public DishDto updateDish(@PathVariable @Positive(message = "ID must be greater than 0") Long id,
                               @Valid @RequestBody DishDto dishDto) {
         return dishService.update(id, dishDto);
     }
 
     @DeleteMapping("/dish/{id}")
-    @Operation(summary = "Удалить блюдо")
-    public void deleteDish(@PathVariable @Positive(message = "ID должен быть больше 0") Long id) {
+    @Operation(summary = "Delete dish")
+    public void deleteDish(@PathVariable @Positive(message = "ID must be greater than 0") Long id) {
         dishService.deleteById(id);
     }
 
     @GetMapping("/dish/cache/status")
-    @Operation(summary = "Получить статус кэша поиска блюд")
+    @Operation(summary = "Get dish search cache status")
     public Map<String, Object> getDishCacheStatus() {
         return dishService.getCacheStatus();
     }

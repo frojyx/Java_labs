@@ -21,7 +21,7 @@ import java.util.List;
 @RestController
 @Validated
 @RequestMapping("/api/categories")
-@Tag(name = "Categories", description = "Операции с категориями")
+@Tag(name = "Categories", description = "Operations with categories")
 public class CategoryController {
     private final CategoryService categoryService;
 
@@ -30,33 +30,33 @@ public class CategoryController {
     }
 
     @GetMapping
-    @Operation(summary = "Получить все категории")
+    @Operation(summary = "Get all categories")
     public List<CategoryDto> getAllCategories() {
         return categoryService.findAll();
     }
 
     @GetMapping("/{id}")
-    @Operation(summary = "Получить категорию по ID")
-    public CategoryDto getCategoryById(@PathVariable @Positive(message = "ID должен быть больше 0") Long id) {
+    @Operation(summary = "Get category by ID")
+    public CategoryDto getCategoryById(@PathVariable @Positive(message = "ID must be greater than 0") Long id) {
         return categoryService.findById(id);
     }
 
     @PostMapping
-    @Operation(summary = "Создать категорию")
+    @Operation(summary = "Create category")
     public CategoryDto createCategory(@Valid @RequestBody CategoryDto categoryDto) {
         return categoryService.save(categoryDto);
     }
 
     @PutMapping("/{id}")
-    @Operation(summary = "Обновить категорию")
-    public CategoryDto updateCategory(@PathVariable @Positive(message = "ID должен быть больше 0") Long id,
+    @Operation(summary = "Update category")
+    public CategoryDto updateCategory(@PathVariable @Positive(message = "ID must be greater than 0") Long id,
                                       @Valid @RequestBody CategoryDto categoryDto) {
         return categoryService.update(id, categoryDto);
     }
 
     @DeleteMapping("/{id}")
-    @Operation(summary = "Удалить категорию")
-    public void deleteCategory(@PathVariable @Positive(message = "ID должен быть больше 0") Long id) {
+    @Operation(summary = "Delete category")
+    public void deleteCategory(@PathVariable @Positive(message = "ID must be greater than 0") Long id) {
         categoryService.deleteById(id);
     }
 }

@@ -41,6 +41,10 @@ public class DishDto {
         return id;
     }
 
+    public void setId(Long id) {
+        this.id = id;
+    }
+
     public int getWeight() {
         return weight;
     }
@@ -79,9 +83,5 @@ public class DishDto {
 
     public void setPrice(double price) {
         this.price = price;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
     }
 }

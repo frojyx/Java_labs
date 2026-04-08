@@ -19,6 +19,7 @@ import java.util.List;
 @ControllerAdvice
 public class GlobalExceptionHandler {
     private static final Logger LOGGER = LoggerFactory.getLogger(GlobalExceptionHandler.class);
+    private static final String BULK_DEMO_FAILURE_MESSAGE = "Artificial failure after saving the first order in bulk.";
 
     @ExceptionHandler(ResourceNotFoundException.class)
     public ResponseEntity<ApiErrorResponse> handleNotFound(ResourceNotFoundException exception,
@@ -103,7 +104,11 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(RuntimeException.class)
     public ResponseEntity<ApiErrorResponse> handleRuntime(RuntimeException exception,
                                                           HttpServletRequest request) {
-        logApiException(HttpStatus.INTERNAL_SERVER_ERROR, exception.getMessage(), exception);
+        if (BULK_DEMO_FAILURE_MESSAGE.equals(exception.getMessage())) {
+            logApiException(HttpStatus.INTERNAL_SERVER_ERROR, exception.getMessage());
+        } else {
+            logApiException(HttpStatus.INTERNAL_SERVER_ERROR, exception.getMessage(), exception);
+        }
         return buildResponse(HttpStatus.INTERNAL_SERVER_ERROR, exception.getMessage(), request, null);
     }
 
