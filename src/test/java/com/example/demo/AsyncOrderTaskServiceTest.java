@@ -10,6 +10,7 @@ import com.example.demo.service.AsyncOrderTaskService;
 import com.example.demo.service.ThreadSafeMetricsService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.function.Executable;
 
 import java.util.List;
 
@@ -72,16 +73,22 @@ class AsyncOrderTaskServiceTest {
 
     @Test
     void markMethodsThrowWhenTaskMissing() {
-        assertThrows(ResourceNotFoundException.class, () -> asyncOrderTaskService.markOrderProcessed(100L));
-        assertThrows(ResourceNotFoundException.class,
-            () -> asyncOrderTaskService.markTaskAsCompleted(100L, List.of()));
-        assertThrows(ResourceNotFoundException.class,
-            () -> asyncOrderTaskService.markTaskAsFailed(100L, new IllegalStateException("missing")));
+        Executable markOrderProcessed = () -> asyncOrderTaskService.markOrderProcessed(100L);
+        Executable markTaskAsCompleted = () -> asyncOrderTaskService.markTaskAsCompleted(100L, List.of());
+        Executable markTaskAsFailed =
+            () -> asyncOrderTaskService.markTaskAsFailed(100L, new IllegalStateException("missing"));
+
+        assertThrows(ResourceNotFoundException.class, markOrderProcessed);
+        assertThrows(ResourceNotFoundException.class, markTaskAsCompleted);
+        assertThrows(ResourceNotFoundException.class, markTaskAsFailed);
     }
 
     @Test
     void markTaskAsRunningIgnoresUnknownTask() {
         asyncOrderTaskService.markTaskAsRunning(200L);
+
+        AsyncTaskOverviewDto overviewDto = asyncOrderTaskService.getAllTaskStatuses();
+        assertEquals(0, overviewDto.getTotalTasks());
     }
 
     @Test
