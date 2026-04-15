@@ -42,3 +42,7 @@ mvnw.cmd
 logs/
 *.log
 *.log.gz
+
+### API test assets ###
+postman/
+jmeter/
