@@ -16,10 +16,9 @@ public class RaceConditionDemoService {
         AtomicCounter atomicCounter = new AtomicCounter();
         int expectedCount = threadCount * incrementsPerThread;
 
-        ExecutorService executorService = Executors.newFixedThreadPool(threadCount);
         CountDownLatch latch = new CountDownLatch(threadCount);
 
-        try {
+        try (ExecutorService executorService = Executors.newFixedThreadPool(threadCount)) {
             for (int i = 0; i < threadCount; i++) {
                 executorService.submit(() -> {
                     try {
@@ -38,8 +37,6 @@ public class RaceConditionDemoService {
         } catch (InterruptedException exception) {
             Thread.currentThread().interrupt();
             throw new IllegalStateException("Race condition demo was interrupted", exception);
-        } finally {
-            executorService.shutdownNow();
         }
 
         RaceConditionDemoResultDto resultDto = new RaceConditionDemoResultDto();
