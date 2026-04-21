@@ -194,7 +194,7 @@ class DishServiceTest {
         category.setName("Hot");
         Ingredient ingredient = new Ingredient();
         ingredient.setName("Salt");
-        when(categoryRepository.findByName("Hot")).thenReturn(Optional.of(category));
+        when(categoryRepository.findAllByName("Hot")).thenReturn(List.of(category));
         when(ingredientRepository.findByNameIn(List.of("Salt"))).thenReturn(List.of(ingredient));
         when(dishRepository.save(any(Dish.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
@@ -206,7 +206,7 @@ class DishServiceTest {
     @Test
     void saveThrowsWhenCategoryNotFound() {
         DishDto dto = buildDishDto("Soup", "Missing", 8.0, 250, List.of());
-        when(categoryRepository.findByName("Missing")).thenReturn(Optional.empty());
+        when(categoryRepository.findAllByName("Missing")).thenReturn(List.of());
 
         assertThrows(RuntimeException.class, () -> dishService.save(dto));
     }
@@ -232,7 +232,7 @@ class DishServiceTest {
         Dish existing = new Dish();
         when(dishRepository.findById(1L)).thenReturn(Optional.of(existing));
         DishDto dto = buildDishDto("Soup", "Missing", 8.0, 250, List.of());
-        when(categoryRepository.findByName("Missing")).thenReturn(Optional.empty());
+        when(categoryRepository.findAllByName("Missing")).thenReturn(List.of());
 
         assertThrows(RuntimeException.class, () -> dishService.update(1L, dto));
     }
@@ -261,7 +261,7 @@ class DishServiceTest {
         ingredient.setName("Salt");
 
         when(dishRepository.findById(1L)).thenReturn(Optional.of(existing));
-        when(categoryRepository.findByName("Hot")).thenReturn(Optional.of(category));
+        when(categoryRepository.findAllByName("Hot")).thenReturn(List.of(category));
         when(ingredientRepository.findByNameIn(List.of("Salt"))).thenReturn(List.of(ingredient));
         when(dishRepository.save(existing)).thenReturn(existing);
 

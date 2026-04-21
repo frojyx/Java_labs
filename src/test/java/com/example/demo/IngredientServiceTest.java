@@ -71,7 +71,7 @@ class IngredientServiceTest {
     void saveThrowsWhenNameExists() {
         IngredientDto dto = new IngredientDto();
         dto.setName("Cheese");
-        when(ingredientRepository.findByName("Cheese")).thenReturn(Optional.of(new Ingredient()));
+        when(ingredientRepository.findAllByName("Cheese")).thenReturn(List.of(new Ingredient()));
 
         assertThrows(ConflictException.class, () -> ingredientService.save(dto));
     }
@@ -80,7 +80,7 @@ class IngredientServiceTest {
     void saveStoresIngredientAndInvalidatesCache() {
         IngredientDto dto = new IngredientDto();
         dto.setName("Cheese");
-        when(ingredientRepository.findByName("Cheese")).thenReturn(Optional.empty());
+        when(ingredientRepository.findAllByName("Cheese")).thenReturn(List.of());
         when(ingredientRepository.save(any(Ingredient.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         IngredientDto result = ingredientService.save(dto);
@@ -104,7 +104,7 @@ class IngredientServiceTest {
 
         Ingredient conflict = new Ingredient();
         conflict.setId(2L);
-        when(ingredientRepository.findByName("Cheese")).thenReturn(Optional.of(conflict));
+        when(ingredientRepository.findAllByName("Cheese")).thenReturn(List.of(conflict));
 
         IngredientDto dto = new IngredientDto();
         dto.setName("Cheese");
@@ -117,7 +117,7 @@ class IngredientServiceTest {
         Ingredient existing = new Ingredient();
         existing.setId(1L);
         when(ingredientRepository.findById(1L)).thenReturn(Optional.of(existing));
-        when(ingredientRepository.findByName("Cheese")).thenReturn(Optional.of(existing));
+        when(ingredientRepository.findAllByName("Cheese")).thenReturn(List.of(existing));
         when(ingredientRepository.save(existing)).thenReturn(existing);
 
         IngredientDto dto = new IngredientDto();

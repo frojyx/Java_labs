@@ -77,7 +77,7 @@ class CategoryServiceTest {
     void saveThrowsWhenNameExists() {
         CategoryDto dto = new CategoryDto();
         dto.setName("Pasta");
-        when(categoryRepository.findByName("Pasta")).thenReturn(Optional.of(new Category()));
+        when(categoryRepository.findAllByName("Pasta")).thenReturn(List.of(new Category()));
 
         assertThrows(ConflictException.class, () -> categoryService.save(dto));
         verify(categoryRepository, never()).save(any(Category.class));
@@ -87,7 +87,7 @@ class CategoryServiceTest {
     void saveStoresCategoryAndInvalidatesCache() {
         CategoryDto dto = new CategoryDto();
         dto.setName("Pasta");
-        when(categoryRepository.findByName("Pasta")).thenReturn(Optional.empty());
+        when(categoryRepository.findAllByName("Pasta")).thenReturn(List.of());
         when(categoryRepository.save(any(Category.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         CategoryDto result = categoryService.save(dto);
@@ -111,7 +111,7 @@ class CategoryServiceTest {
 
         Category conflict = new Category();
         conflict.setId(2L);
-        when(categoryRepository.findByName("Soup")).thenReturn(Optional.of(conflict));
+        when(categoryRepository.findAllByName("Soup")).thenReturn(List.of(conflict));
 
         CategoryDto dto = new CategoryDto();
         dto.setName("Soup");
@@ -125,7 +125,7 @@ class CategoryServiceTest {
         existing.setId(1L);
         existing.setName("Old");
         when(categoryRepository.findById(1L)).thenReturn(Optional.of(existing));
-        when(categoryRepository.findByName("Soup")).thenReturn(Optional.of(existing));
+        when(categoryRepository.findAllByName("Soup")).thenReturn(List.of(existing));
         when(categoryRepository.save(existing)).thenReturn(existing);
 
         CategoryDto dto = new CategoryDto();
