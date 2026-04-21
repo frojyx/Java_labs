@@ -46,7 +46,7 @@ public class IngredientService {
 
     @Transactional
     public IngredientDto save(IngredientDto ingredientDto) {
-        if (ingredientRepository.findByName(ingredientDto.getName()).isPresent()) {
+        if (!ingredientRepository.findAllByName(ingredientDto.getName()).isEmpty()) {
             throw new ConflictException("Ингредиент с названием '" + ingredientDto.getName() + "' уже существует");
         }
 
@@ -61,8 +61,9 @@ public class IngredientService {
         Ingredient ingredient = ingredientRepository.findById(id)
             .orElseThrow(() -> new ResourceNotFoundException(INGREDIENT_WITH_ID_PREFIX + id + NOT_FOUND_SUFFIX));
 
-        ingredientRepository.findByName(ingredientDto.getName())
+        ingredientRepository.findAllByName(ingredientDto.getName()).stream()
             .filter(existingIngredient -> !existingIngredient.getId().equals(id))
+            .findFirst()
             .ifPresent(existingIngredient -> {
                 throw new ConflictException(
                     "Ингредиент с названием '" + ingredientDto.getName() + "' уже существует"

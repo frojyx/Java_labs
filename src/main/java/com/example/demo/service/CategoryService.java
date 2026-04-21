@@ -49,7 +49,7 @@ public class CategoryService {
 
     @Transactional
     public CategoryDto save(CategoryDto categoryDto) {
-        if (categoryRepository.findByName(categoryDto.getName()).isPresent()) {
+        if (!categoryRepository.findAllByName(categoryDto.getName()).isEmpty()) {
             throw new ConflictException("Категория с названием '" + categoryDto.getName() + "' уже существует");
         }
 
@@ -64,8 +64,9 @@ public class CategoryService {
         Category category = categoryRepository.findById(id)
             .orElseThrow(() -> new ResourceNotFoundException(CATEGORY_WITH_ID_PREFIX + id + NOT_FOUND_SUFFIX));
 
-        categoryRepository.findByName(categoryDto.getName())
+        categoryRepository.findAllByName(categoryDto.getName()).stream()
             .filter(existingCategory -> !existingCategory.getId().equals(id))
+            .findFirst()
             .ifPresent(existingCategory -> {
                 throw new ConflictException("Категория с названием '" + categoryDto.getName() + "' уже существует");
             });

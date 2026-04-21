@@ -10,29 +10,37 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 @Service
 public class RaceConditionDemoService {
+    private static final int UNSAFE_YIELD_MASK = 255;
+
     public RaceConditionDemoResultDto runDemo(int threadCount, int incrementsPerThread) {
         UnsafeCounter unsafeCounter = new UnsafeCounter();
         SynchronizedCounter synchronizedCounter = new SynchronizedCounter();
         AtomicCounter atomicCounter = new AtomicCounter();
         int expectedCount = threadCount * incrementsPerThread;
 
+        CountDownLatch startSignal = new CountDownLatch(1);
         CountDownLatch latch = new CountDownLatch(threadCount);
 
         try (ExecutorService executorService = Executors.newFixedThreadPool(threadCount)) {
             for (int i = 0; i < threadCount; i++) {
                 executorService.submit(() -> {
                     try {
+                        startSignal.await();
                         for (int step = 0; step < incrementsPerThread; step++) {
                             unsafeCounter.increment();
                             synchronizedCounter.increment();
                             atomicCounter.increment();
                         }
+                    } catch (InterruptedException exception) {
+                        Thread.currentThread().interrupt();
+                        throw new IllegalStateException("Race condition demo worker was interrupted", exception);
                     } finally {
                         latch.countDown();
                     }
                 });
             }
 
+            startSignal.countDown();
             latch.await();
         } catch (InterruptedException exception) {
             Thread.currentThread().interrupt();
@@ -54,8 +62,9 @@ public class RaceConditionDemoService {
 
         private void increment() {
             int current = value;
-            // Deliberately widen the race window so lost updates are easy to reproduce.
-            Thread.yield();
+            if ((current & UNSAFE_YIELD_MASK) == 0) {
+                Thread.yield();
+            }
             value = current + 1;
         }
 

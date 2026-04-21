@@ -112,7 +112,7 @@ public class DishService {
         dish.setWeight(dishDto.getWeight());
 
         if (dishDto.getCategory() != null) {
-            Category category = categoryRepository.findByName(dishDto.getCategory())
+            Category category = categoryRepository.findAllByName(dishDto.getCategory()).stream().findFirst()
                 .orElseThrow(() -> new RuntimeException("Категория '" + dishDto.getCategory() + "' не найдена"));
             dish.setCategory(category);
         }
@@ -146,7 +146,7 @@ public class DishService {
         existingDish.setPrice(dishDto.getPrice());
         existingDish.setWeight(dishDto.getWeight());
         if (dishDto.getCategory() != null) {
-            Category category = categoryRepository.findByName(dishDto.getCategory())
+            Category category = categoryRepository.findAllByName(dishDto.getCategory()).stream().findFirst()
                 .orElseThrow(() -> new RuntimeException("Категория '" + dishDto.getCategory() + "' не найдена"));
             existingDish.setCategory(category);
         } else {
@@ -223,7 +223,7 @@ public class DishService {
         }
 
         List<Ingredient> ingredients = ingredientRepository.findByNameIn(ingredientNames);
-        if (ingredients.size() != ingredientNames.size()) {
+        if (ingredients.size() < ingredientNames.size()) {
             throw new RuntimeException("Не все ингредиенты найдены");
         }
         return ingredients;
