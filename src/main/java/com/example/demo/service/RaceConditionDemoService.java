@@ -23,21 +23,16 @@ public class RaceConditionDemoService {
 
         try (ExecutorService executorService = Executors.newFixedThreadPool(threadCount)) {
             for (int i = 0; i < threadCount; i++) {
-                executorService.submit(() -> {
-                    try {
-                        startSignal.await();
-                        for (int step = 0; step < incrementsPerThread; step++) {
-                            unsafeCounter.increment();
-                            synchronizedCounter.increment();
-                            atomicCounter.increment();
-                        }
-                    } catch (InterruptedException exception) {
-                        Thread.currentThread().interrupt();
-                        throw new IllegalStateException("Race condition demo worker was interrupted", exception);
-                    } finally {
-                        latch.countDown();
-                    }
-                });
+                executorService.submit(() ->
+                    runWorker(
+                        startSignal,
+                        latch,
+                        incrementsPerThread,
+                        unsafeCounter,
+                        synchronizedCounter,
+                        atomicCounter
+                    )
+                );
             }
 
             startSignal.countDown();
@@ -55,6 +50,24 @@ public class RaceConditionDemoService {
         resultDto.setSynchronizedActualCount(synchronizedCounter.getValue());
         resultDto.setAtomicActualCount(atomicCounter.getValue());
         return resultDto;
+    }
+
+    private void runWorker(CountDownLatch startSignal, CountDownLatch latch, int incrementsPerThread,
+                           UnsafeCounter unsafeCounter, SynchronizedCounter synchronizedCounter,
+                           AtomicCounter atomicCounter) {
+        try {
+            startSignal.await();
+            for (int step = 0; step < incrementsPerThread; step++) {
+                unsafeCounter.increment();
+                synchronizedCounter.increment();
+                atomicCounter.increment();
+            }
+        } catch (InterruptedException exception) {
+            Thread.currentThread().interrupt();
+            throw new IllegalStateException("Race condition demo worker was interrupted", exception);
+        } finally {
+            latch.countDown();
+        }
     }
 
     private static final class UnsafeCounter {

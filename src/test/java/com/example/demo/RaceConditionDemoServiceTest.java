@@ -4,6 +4,10 @@ import com.example.demo.dto.RaceConditionDemoResultDto;
 import com.example.demo.service.RaceConditionDemoService;
 import org.junit.jupiter.api.Test;
 
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.util.concurrent.CountDownLatch;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -40,5 +44,56 @@ class RaceConditionDemoServiceTest {
         } finally {
             Thread.interrupted();
         }
+    }
+
+    @Test
+    void runWorkerThrowsWhenInterruptedWhileWaitingForStartSignal() throws Exception {
+        Method runWorker = RaceConditionDemoService.class.getDeclaredMethod(
+            "runWorker",
+            CountDownLatch.class,
+            CountDownLatch.class,
+            int.class,
+            Class.forName("com.example.demo.service.RaceConditionDemoService$UnsafeCounter"),
+            Class.forName("com.example.demo.service.RaceConditionDemoService$SynchronizedCounter"),
+            Class.forName("com.example.demo.service.RaceConditionDemoService$AtomicCounter")
+        );
+        runWorker.setAccessible(true);
+
+        Object unsafeCounter = instantiateCounter("com.example.demo.service.RaceConditionDemoService$UnsafeCounter");
+        Object synchronizedCounter =
+            instantiateCounter("com.example.demo.service.RaceConditionDemoService$SynchronizedCounter");
+        Object atomicCounter = instantiateCounter("com.example.demo.service.RaceConditionDemoService$AtomicCounter");
+        CountDownLatch startSignal = new CountDownLatch(1);
+        CountDownLatch latch = new CountDownLatch(1);
+
+        Thread.currentThread().interrupt();
+        try {
+            InvocationTargetException exception = assertThrows(
+                InvocationTargetException.class,
+                () -> runWorker.invoke(
+                    raceConditionDemoService,
+                    startSignal,
+                    latch,
+                    1,
+                    unsafeCounter,
+                    synchronizedCounter,
+                    atomicCounter
+                )
+            );
+
+            assertTrue(exception.getCause() instanceof IllegalStateException);
+            assertEquals("Race condition demo worker was interrupted", exception.getCause().getMessage());
+            assertEquals(0L, latch.getCount());
+            assertTrue(Thread.currentThread().isInterrupted());
+        } finally {
+            Thread.interrupted();
+        }
+    }
+
+    private Object instantiateCounter(String className) throws Exception {
+        Class<?> counterClass = Class.forName(className);
+        var constructor = counterClass.getDeclaredConstructor();
+        constructor.setAccessible(true);
+        return constructor.newInstance();
     }
 }
