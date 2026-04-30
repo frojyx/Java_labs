@@ -74,11 +74,7 @@ public class RaceConditionDemoService {
         private int value;
 
         private void increment() {
-            int current = value;
-            if ((current & UNSAFE_YIELD_MASK) == 0) {
-                Thread.yield();
-            }
-            value = current + 1;
+            value++;
         }
 
         private int getValue() {

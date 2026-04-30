@@ -68,7 +68,7 @@ public class DishController {
         @Parameter(description = "Maximum price")
         @RequestParam(required = false) Double maxPrice,
         @Parameter(description = "Use native query")
-        @RequestParam(defaultValue = "false") boolean useNativeQuery,
+        @RequestParam(defaultValue = "true") boolean useNativeQuery,
         @PositiveOrZero(message = "Page number must be non-negative")
         @Parameter(description = "Page number", example = "0")
         @RequestParam(defaultValue = "0") int page,
