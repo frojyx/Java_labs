@@ -8,14 +8,15 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select } from "@/components/ui/select";
 import { MultiValueInput } from "@/components/shared/multi-value-input";
-import type { Dish, Order } from "@/types/entities";
+import type { Client, Dish, Order } from "@/types/entities";
 
 interface OrderFormDialogProps {
   open: boolean;
   order?: Order | null;
+  clients: Client[];
   dishes: Dish[];
   isSubmitting?: boolean;
   onOpenChange: (open: boolean) => void;
@@ -25,6 +26,7 @@ interface OrderFormDialogProps {
 export function OrderFormDialog({
   open,
   order,
+  clients,
   dishes,
   isSubmitting,
   onOpenChange,
@@ -32,43 +34,67 @@ export function OrderFormDialog({
 }: OrderFormDialogProps) {
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
+  const [selectedClientId, setSelectedClientId] = useState("");
   const [dishNames, setDishNames] = useState<string[]>([]);
 
   useEffect(() => {
     setFirstName(order?.clientFirstName || "");
     setLastName(order?.clientLastName || "");
+    if (order) {
+      const matchedClient = clients.find(
+        (client) =>
+          client.firstName === order.clientFirstName && client.lastName === order.clientLastName,
+      );
+      setSelectedClientId(matchedClient ? String(matchedClient.id) : "");
+    } else {
+      setSelectedClientId("");
+    }
     setDishNames(order?.dishNames || []);
-  }, [order, open]);
+  }, [clients, order, open]);
+
+  const isEditing = Boolean(order);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>{order ? "Редактировать заказ" : "Создать заказ"}</DialogTitle>
-          <DialogDescription>
-            Укажите клиента и блюда, входящие в заказ.
-          </DialogDescription>
+          {isEditing ? null : (
+            <DialogDescription>
+              Укажите клиента и блюда, входящие в заказ.
+            </DialogDescription>
+          )}
         </DialogHeader>
         <div className="grid gap-5 sm:grid-cols-2">
-          <div className="space-y-2">
-            <Label htmlFor="order-first-name">Имя клиента</Label>
-            <Input
-              id="order-first-name"
-              value={firstName}
-              onChange={(event) => setFirstName(event.target.value)}
-              placeholder="Анна"
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="order-last-name">Фамилия клиента</Label>
-            <Input
-              id="order-last-name"
-              value={lastName}
-              onChange={(event) => setLastName(event.target.value)}
-              placeholder="Петрова"
-            />
-          </div>
-          <div className="sm:col-span-2">
+          {isEditing ? null : (
+            <>
+              <div className="space-y-2">
+                <Label htmlFor="order-client">Клиент</Label>
+                <Select
+                  id="order-client"
+                  value={selectedClientId}
+                  placeholder="Выберите существующего клиента"
+                  onChange={(event) => {
+                    const nextClientId = event.target.value;
+                    setSelectedClientId(nextClientId);
+
+                    const selectedClient = clients.find(
+                      (client) => String(client.id) === nextClientId,
+                    );
+                    setFirstName(selectedClient?.firstName || "");
+                    setLastName(selectedClient?.lastName || "");
+                  }}
+                >
+                  {clients.map((client) => (
+                    <option key={client.id} value={client.id}>
+                      {client.firstName} {client.lastName}
+                    </option>
+                  ))}
+                </Select>
+              </div>
+            </>
+          )}
+          <div className={isEditing ? "sm:col-span-2" : "sm:col-span-2"}>
             <MultiValueInput
               label="Блюда"
               values={dishNames}
@@ -83,11 +109,11 @@ export function OrderFormDialog({
             Отмена
           </Button>
           <Button
-            disabled={isSubmitting}
+            disabled={isSubmitting || (!isEditing && !selectedClientId)}
             onClick={() =>
               onSubmit({
-                clientFirstName: firstName.trim(),
-                clientLastName: lastName.trim(),
+                clientFirstName: isEditing ? order?.clientFirstName || "" : firstName.trim(),
+                clientLastName: isEditing ? order?.clientLastName || "" : lastName.trim(),
                 dishNames,
               })
             }

@@ -87,10 +87,9 @@ public class OrderService {
         Order order = orderRepository.findById(id)
             .orElseThrow(() -> new ResourceNotFoundException(ORDER_WITH_ID_PREFIX + id + ORDER_NOT_FOUND_SUFFIX));
 
-        if (order.getClient() != null) {
-            order.getClient().setFirstName(orderDto.getClientFirstName());
-            order.getClient().setLastName(orderDto.getClientLastName());
-        }
+        List<String> normalizedDishNames = validateAndNormalizeDishNames(orderDto.getDishNames());
+        List<Dish> dishes = resolveDishesOrThrow(normalizedDishNames);
+        order.setDishes(dishes);
 
         return orderMapper.toDto(orderRepository.save(order));
     }
@@ -125,20 +124,30 @@ public class OrderService {
 
     private OrderDto createOrderInternal(OrderDto orderDto) {
         List<String> normalizedDishNames = validateAndNormalizeDishNames(orderDto.getDishNames());
-
-        Client client = new Client();
-        client.setFirstName(orderDto.getClientFirstName());
-        client.setLastName(orderDto.getClientLastName());
-        Client savedClient = clientRepository.save(client);
+        Client client = resolveExistingClientOrThrow(orderDto);
 
         List<Dish> dishes = resolveDishesOrThrow(normalizedDishNames);
 
         Order order = new Order();
-        order.setClient(savedClient);
+        order.setClient(client);
         order.setDishes(dishes);
         Order savedOrder = orderRepository.save(order);
 
         return orderMapper.toDto(savedOrder);
+    }
+
+    private Client resolveExistingClientOrThrow(OrderDto orderDto) {
+        String firstName = Optional.ofNullable(orderDto.getClientFirstName())
+            .map(String::trim)
+            .orElse("");
+        String lastName = Optional.ofNullable(orderDto.getClientLastName())
+            .map(String::trim)
+            .orElse("");
+
+        return clientRepository.findByFirstNameAndLastName(firstName, lastName)
+            .orElseThrow(() -> new UnprocessableEntityException(
+                "Cannot create order. Client not found: " + firstName + " " + lastName
+            ));
     }
 
     private List<OrderDto> requireBulkPayload(List<OrderDto> orderDtos) {

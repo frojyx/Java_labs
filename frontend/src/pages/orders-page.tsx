@@ -2,6 +2,7 @@ import { useDeferredValue, useEffect, useState } from "react";
 import { Pencil, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { DeleteConfirmationDialog } from "@/components/shared/delete-confirmation-dialog";
+import { PaginationControls } from "@/components/shared/pagination-controls";
 import { PageHeader } from "@/components/shared/page-header";
 import { SearchInput } from "@/components/shared/search-input";
 import { ErrorState, LoadingState } from "@/components/shared/status-view";
@@ -12,14 +13,18 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { OrderFormDialog } from "@/features/orders/order-form-dialog";
 import { getApiErrorMessage } from "@/lib/api";
+import { clientsService } from "@/services/clients-service";
 import { dishesService } from "@/services/dishes-service";
 import { ordersService } from "@/services/orders-service";
-import type { Dish, Order } from "@/types/entities";
+import type { Client, Dish, Order } from "@/types/entities";
 
 export function OrdersPage() {
+  const pageSize = 9;
+  const [clients, setClients] = useState<Client[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
   const [dishes, setDishes] = useState<Dish[]>([]);
   const [query, setQuery] = useState("");
+  const [page, setPage] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -35,12 +40,14 @@ export function OrdersPage() {
     }
     setError(null);
     try {
-      const [ordersData, dishesData] = await Promise.all([
+      const [ordersData, dishesData, clientsData] = await Promise.all([
         ordersService.search(deferredQuery),
         dishesService.getAll(),
+        clientsService.getAll(),
       ]);
       setOrders(ordersData);
       setDishes(dishesData);
+      setClients(clientsData);
     } catch (err) {
       setError(getApiErrorMessage(err));
     } finally {
@@ -52,6 +59,17 @@ export function OrdersPage() {
   useEffect(() => {
     void loadOrders();
   }, [deferredQuery]);
+
+  useEffect(() => {
+    setPage(0);
+  }, [deferredQuery]);
+
+  useEffect(() => {
+    const nextTotalPages = Math.ceil(orders.length / pageSize);
+    if (nextTotalPages > 0 && page > nextTotalPages - 1) {
+      setPage(nextTotalPages - 1);
+    }
+  }, [orders.length, page]);
 
   async function handleSubmit(payload: Omit<Order, "id">) {
     setIsSubmitting(true);
@@ -96,12 +114,14 @@ export function OrdersPage() {
     return <ErrorState message={error} onRetry={loadOrders} />;
   }
 
+  const totalPages = Math.ceil(orders.length / pageSize);
+  const paginatedOrders = orders.slice(page * pageSize, page * pageSize + pageSize);
+
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       <PageHeader
         eyebrow="Заказы"
         title="Заказы"
-        description="Просматривайте, создавайте и редактируйте заказы клиентов в одном разделе."
         actionLabel="Создать заказ"
         actionIcon={<Plus className="h-4 w-4" />}
         onAction={() => {
@@ -129,69 +149,80 @@ export function OrdersPage() {
           }}
         />
       ) : (
-        <Card className="bg-white/85">
-          <CardContent className="p-0">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Заказ</TableHead>
-                  <TableHead>Клиент</TableHead>
-                  <TableHead>Блюда</TableHead>
-                  <TableHead className="text-right">Действия</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {orders.map((order) => (
-                  <TableRow key={order.id}>
-                    <TableCell>
-                      <div className="font-medium">#{order.id}</div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="font-medium">
-                        {order.clientFirstName} {order.clientLastName}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex flex-wrap gap-2">
-                        {order.dishNames.map((dishName) => (
-                          <Badge key={dishName} variant="outline">
-                            {dishName}
-                          </Badge>
-                        ))}
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end gap-2">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => {
-                            setSelectedOrder(order);
-                            setDialogOpen(true);
-                          }}
-                        >
-                          <Pencil className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => setOrderToDelete(order)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </TableCell>
+        <div className="space-y-5">
+          <Card className="bg-white/85">
+            <CardContent className="p-0">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Заказ</TableHead>
+                    <TableHead>Клиент</TableHead>
+                    <TableHead>Блюда</TableHead>
+                    <TableHead className="text-right">Действия</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
+                </TableHeader>
+                <TableBody>
+                  {paginatedOrders.map((order) => (
+                    <TableRow key={order.id}>
+                      <TableCell>
+                        <div className="font-medium">#{order.id}</div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="font-medium">
+                          {order.clientFirstName} {order.clientLastName}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex flex-wrap gap-2">
+                          {order.dishNames.map((dishName) => (
+                            <Badge key={dishName} variant="outline">
+                              {dishName}
+                            </Badge>
+                          ))}
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-2">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => {
+                              setSelectedOrder(order);
+                              setDialogOpen(true);
+                            }}
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => setOrderToDelete(order)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+
+          <PaginationControls
+            page={page}
+            totalPages={totalPages}
+            totalItems={orders.length}
+            itemLabel="заказов"
+            onPageChange={setPage}
+          />
+        </div>
       )}
 
       <OrderFormDialog
         open={dialogOpen}
         order={selectedOrder}
+        clients={clients}
         dishes={dishes}
         isSubmitting={isSubmitting}
         onOpenChange={(open) => {

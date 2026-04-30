@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 interface PageHeaderProps {
   eyebrow?: string;
   title: string;
-  description: string;
+  description?: string;
   actionLabel?: string;
   actionIcon?: ReactNode;
   onAction?: () => void;
@@ -19,8 +19,8 @@ export function PageHeader({
   onAction,
 }: PageHeaderProps) {
   return (
-    <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-      <div className="space-y-3">
+    <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
+      <div className="space-y-2">
         {eyebrow ? (
           <div className="text-xs font-semibold uppercase tracking-[0.3em] text-primary/80">
             {eyebrow}
@@ -30,9 +30,11 @@ export function PageHeader({
           <h1 className="font-display text-4xl tracking-tight text-foreground sm:text-5xl">
             {title}
           </h1>
-          <p className="max-w-2xl text-sm leading-6 text-muted-foreground sm:text-base">
-            {description}
-          </p>
+          {description ? (
+            <p className="max-w-2xl text-sm leading-6 text-muted-foreground sm:text-base">
+              {description}
+            </p>
+          ) : null}
         </div>
       </div>
       {actionLabel && onAction ? (

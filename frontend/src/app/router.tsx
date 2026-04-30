@@ -1,6 +1,5 @@
-import { createBrowserRouter } from "react-router-dom";
+import { Navigate, createBrowserRouter } from "react-router-dom";
 import { AppLayout } from "@/layouts/app-layout";
-import { HomePage } from "@/pages/home-page";
 import { ClientsPage } from "@/pages/clients-page";
 import { OrdersPage } from "@/pages/orders-page";
 import { DishesPage } from "@/pages/dishes-page";
@@ -14,7 +13,7 @@ export const router = createBrowserRouter([
     element: <AppLayout />,
     errorElement: <NotFoundPage />,
     children: [
-      { index: true, element: <HomePage /> },
+      { index: true, element: <Navigate to="/orders" replace /> },
       { path: "clients", element: <ClientsPage /> },
       { path: "orders", element: <OrdersPage /> },
       { path: "dishes", element: <DishesPage /> },

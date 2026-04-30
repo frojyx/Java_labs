@@ -81,8 +81,11 @@ class OrderServiceTest {
     void createNewOrderCreatesClientAndOrder() {
         OrderDto orderDto = buildOrderDto("Anna", "Lee", List.of("Pasta"));
         Dish pasta = buildDish(1L, "Pasta");
+        Client client = new Client();
+        client.setFirstName("Anna");
+        client.setLastName("Lee");
 
-        when(clientRepository.save(any(Client.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(clientRepository.findByFirstNameAndLastName("Anna", "Lee")).thenReturn(Optional.of(client));
         when(dishRepository.findByNameIn(List.of("Pasta"))).thenReturn(List.of(pasta));
         when(orderRepository.save(any(Order.class))).thenAnswer(invocation -> {
             Order order = invocation.getArgument(0);
@@ -93,7 +96,6 @@ class OrderServiceTest {
         OrderDto result = orderService.createNewOrder(orderDto);
 
         assertEquals(55L, result.getId());
-        verify(clientRepository).save(any(Client.class));
         verify(orderRepository).save(any(Order.class));
     }
 
@@ -121,7 +123,10 @@ class OrderServiceTest {
     @Test
     void createNewOrderThrowsWhenDishNotFound() {
         OrderDto orderDto = buildOrderDto("Anna", "Lee", List.of("Pasta", "Soup"));
-        when(clientRepository.save(any(Client.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        Client client = new Client();
+        client.setFirstName("Anna");
+        client.setLastName("Lee");
+        when(clientRepository.findByFirstNameAndLastName("Anna", "Lee")).thenReturn(Optional.of(client));
         when(dishRepository.findByNameIn(List.of("Pasta", "Soup"))).thenReturn(List.of(buildDish(1L, "Pasta")));
 
         assertThrows(UnprocessableEntityException.class, () -> orderService.createNewOrder(orderDto));
@@ -132,7 +137,14 @@ class OrderServiceTest {
         OrderDto first = buildOrderDto("A", "B", List.of("Pasta"));
         OrderDto second = buildOrderDto("C", "D", List.of("Soup"));
 
-        when(clientRepository.save(any(Client.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        Client firstClient = new Client();
+        firstClient.setFirstName("A");
+        firstClient.setLastName("B");
+        Client secondClient = new Client();
+        secondClient.setFirstName("C");
+        secondClient.setLastName("D");
+        when(clientRepository.findByFirstNameAndLastName("A", "B")).thenReturn(Optional.of(firstClient));
+        when(clientRepository.findByFirstNameAndLastName("C", "D")).thenReturn(Optional.of(secondClient));
         when(dishRepository.findByNameIn(List.of("Pasta"))).thenReturn(List.of(buildDish(1L, "Pasta")));
         when(dishRepository.findByNameIn(List.of("Soup"))).thenReturn(List.of(buildDish(2L, "Soup")));
         when(orderRepository.save(any(Order.class))).thenAnswer(invocation -> {
@@ -158,7 +170,14 @@ class OrderServiceTest {
     void createOrdersBulkWithoutTransactionDemoThrowsRuntimeWhenSecondOrderHasMissingDish() {
         OrderDto first = buildOrderDto("A", "B", List.of("Pasta"));
         OrderDto second = buildOrderDto("C", "D", List.of("MissingDish"));
-        when(clientRepository.save(any(Client.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        Client firstClient = new Client();
+        firstClient.setFirstName("A");
+        firstClient.setLastName("B");
+        Client secondClient = new Client();
+        secondClient.setFirstName("C");
+        secondClient.setLastName("D");
+        when(clientRepository.findByFirstNameAndLastName("A", "B")).thenReturn(Optional.of(firstClient));
+        when(clientRepository.findByFirstNameAndLastName("C", "D")).thenReturn(Optional.of(secondClient));
         when(dishRepository.findByNameIn(List.of("Pasta"))).thenReturn(List.of(buildDish(1L, "Pasta")));
         when(dishRepository.findByNameIn(List.of("MissingDish"))).thenReturn(List.of());
         when(orderRepository.save(any(Order.class))).thenAnswer(invocation -> invocation.getArgument(0));
@@ -172,7 +191,10 @@ class OrderServiceTest {
     @Test
     void createOrdersBulkWithoutTransactionDemoReturnsWhenSingleOrder() {
         OrderDto first = buildOrderDto("A", "B", List.of("Pasta"));
-        when(clientRepository.save(any(Client.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        Client client = new Client();
+        client.setFirstName("A");
+        client.setLastName("B");
+        when(clientRepository.findByFirstNameAndLastName("A", "B")).thenReturn(Optional.of(client));
         when(dishRepository.findByNameIn(List.of("Pasta"))).thenReturn(List.of(buildDish(1L, "Pasta")));
         when(orderRepository.save(any(Order.class))).thenAnswer(invocation -> {
             Order order = invocation.getArgument(0);
@@ -190,7 +212,14 @@ class OrderServiceTest {
     void createOrdersBulkWithTransactionDemoThrowsRuntimeWhenSecondOrderHasMissingDish() {
         OrderDto first = buildOrderDto("A", "B", List.of("Pasta"));
         OrderDto second = buildOrderDto("C", "D", List.of("MissingDish"));
-        when(clientRepository.save(any(Client.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        Client firstClient = new Client();
+        firstClient.setFirstName("A");
+        firstClient.setLastName("B");
+        Client secondClient = new Client();
+        secondClient.setFirstName("C");
+        secondClient.setLastName("D");
+        when(clientRepository.findByFirstNameAndLastName("A", "B")).thenReturn(Optional.of(firstClient));
+        when(clientRepository.findByFirstNameAndLastName("C", "D")).thenReturn(Optional.of(secondClient));
         when(dishRepository.findByNameIn(List.of("Pasta"))).thenReturn(List.of(buildDish(1L, "Pasta")));
         when(dishRepository.findByNameIn(List.of("MissingDish"))).thenReturn(List.of());
         when(orderRepository.save(any(Order.class))).thenAnswer(invocation -> invocation.getArgument(0));
@@ -204,7 +233,10 @@ class OrderServiceTest {
     @Test
     void createOrdersBulkWithTransactionDemoReturnsWhenSingleOrder() {
         OrderDto first = buildOrderDto("A", "B", List.of("Pasta"));
-        when(clientRepository.save(any(Client.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        Client client = new Client();
+        client.setFirstName("A");
+        client.setLastName("B");
+        when(clientRepository.findByFirstNameAndLastName("A", "B")).thenReturn(Optional.of(client));
         when(dishRepository.findByNameIn(List.of("Pasta"))).thenReturn(List.of(buildDish(1L, "Pasta")));
         when(orderRepository.save(any(Order.class))).thenAnswer(invocation -> {
             Order order = invocation.getArgument(0);
@@ -219,33 +251,49 @@ class OrderServiceTest {
     }
 
     @Test
-    void updateChangesClientDataWhenPresent() {
+    void updateChangesDishesAndKeepsClientDataWhenPresent() {
         Order order = new Order();
         Client client = new Client();
         client.setFirstName("Old");
         client.setLastName("Name");
         order.setClient(client);
+        Dish pasta = buildDish(1L, "Pasta");
         when(orderRepository.findById(1L)).thenReturn(Optional.of(order));
+        when(dishRepository.findByNameIn(List.of("Pasta"))).thenReturn(List.of(pasta));
         when(orderRepository.save(any(Order.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         OrderDto update = buildOrderDto("New", "Client", List.of("Pasta"));
         OrderDto result = orderService.update(1L, update);
 
-        assertEquals("New", result.getClientFirstName());
-        assertEquals("Client", result.getClientLastName());
+        assertEquals("Old", result.getClientFirstName());
+        assertEquals("Name", result.getClientLastName());
+        assertEquals(List.of("Pasta"), result.getDishNames());
     }
 
     @Test
     void updateSavesOrderWhenClientIsNull() {
         Order order = new Order();
         order.setClient(null);
+        Dish pasta = buildDish(1L, "Pasta");
         when(orderRepository.findById(1L)).thenReturn(Optional.of(order));
+        when(dishRepository.findByNameIn(List.of("Pasta"))).thenReturn(List.of(pasta));
         when(orderRepository.save(any(Order.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         OrderDto update = buildOrderDto("New", "Client", List.of("Pasta"));
         orderService.update(1L, update);
 
         verify(orderRepository).save(order);
+    }
+
+    @Test
+    void updateThrowsWhenDishNotFound() {
+        Order order = new Order();
+        when(orderRepository.findById(1L)).thenReturn(Optional.of(order));
+        when(dishRepository.findByNameIn(List.of("Pasta"))).thenReturn(List.of());
+
+        OrderDto update = buildOrderDto("New", "Client", List.of("Pasta"));
+
+        assertThrows(UnprocessableEntityException.class, () -> orderService.update(1L, update));
     }
 
     @Test
@@ -315,7 +363,10 @@ class OrderServiceTest {
     @Test
     void createNewOrderTrimsDishNamesBeforeLookup() {
         OrderDto orderDto = buildOrderDto("A", "B", List.of("  Pasta  "));
-        when(clientRepository.save(any(Client.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        Client client = new Client();
+        client.setFirstName("A");
+        client.setLastName("B");
+        when(clientRepository.findByFirstNameAndLastName("A", "B")).thenReturn(Optional.of(client));
         when(dishRepository.findByNameIn(List.of("Pasta"))).thenReturn(List.of(buildDish(1L, "Pasta")));
         when(orderRepository.save(any(Order.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
@@ -333,6 +384,15 @@ class OrderServiceTest {
         OrderDto orderDto = buildOrderDto("A", "B", dishNames);
 
         assertThrows(BadRequestException.class, () -> orderService.createNewOrder(orderDto));
+    }
+
+    @Test
+    void createNewOrderThrowsWhenClientNotFound() {
+        OrderDto orderDto = buildOrderDto("Anna", "Lee", List.of("Pasta"));
+        when(clientRepository.findByFirstNameAndLastName("Anna", "Lee")).thenReturn(Optional.empty());
+
+        assertThrows(UnprocessableEntityException.class, () -> orderService.createNewOrder(orderDto));
+        verify(orderRepository, never()).save(any(Order.class));
     }
 
     private OrderDto buildOrderDto(String firstName, String lastName, List<String> dishes) {

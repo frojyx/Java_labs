@@ -2,6 +2,7 @@ import { useDeferredValue, useEffect, useState } from "react";
 import { Pencil, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { DeleteConfirmationDialog } from "@/components/shared/delete-confirmation-dialog";
+import { PaginationControls } from "@/components/shared/pagination-controls";
 import { PageHeader } from "@/components/shared/page-header";
 import { SearchInput } from "@/components/shared/search-input";
 import { ErrorState, LoadingState } from "@/components/shared/status-view";
@@ -15,8 +16,10 @@ import { clientsService } from "@/services/clients-service";
 import type { Client } from "@/types/entities";
 
 export function ClientsPage() {
+  const pageSize = 9;
   const [clients, setClients] = useState<Client[]>([]);
   const [query, setQuery] = useState("");
+  const [page, setPage] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -45,6 +48,17 @@ export function ClientsPage() {
   useEffect(() => {
     void loadClients();
   }, [deferredQuery]);
+
+  useEffect(() => {
+    setPage(0);
+  }, [deferredQuery]);
+
+  useEffect(() => {
+    const nextTotalPages = Math.ceil(clients.length / pageSize);
+    if (nextTotalPages > 0 && page > nextTotalPages - 1) {
+      setPage(nextTotalPages - 1);
+    }
+  }, [clients.length, page]);
 
   async function handleSubmit(payload: Omit<Client, "id">) {
     setIsSubmitting(true);
@@ -89,12 +103,14 @@ export function ClientsPage() {
     return <ErrorState message={error} onRetry={loadClients} />;
   }
 
+  const totalPages = Math.ceil(clients.length / pageSize);
+  const paginatedClients = clients.slice(page * pageSize, page * pageSize + pageSize);
+
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       <PageHeader
         eyebrow="Клиентская база"
         title="Клиенты"
-        description="Управляйте списком клиентов, быстро ищите записи и обновляйте данные."
         actionLabel="Создать клиента"
         actionIcon={<Plus className="h-4 w-4" />}
         onAction={() => {
@@ -122,50 +138,60 @@ export function ClientsPage() {
           }}
         />
       ) : (
-        <Card className="bg-white/85">
-          <CardContent className="p-0">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>ID</TableHead>
-                  <TableHead>Имя</TableHead>
-                  <TableHead>Фамилия</TableHead>
-                  <TableHead className="text-right">Действия</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {clients.map((client) => (
-                  <TableRow key={client.id}>
-                    <TableCell>#{client.id}</TableCell>
-                    <TableCell className="font-medium">{client.firstName}</TableCell>
-                    <TableCell>{client.lastName}</TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end gap-2">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => {
-                            setSelectedClient(client);
-                            setDialogOpen(true);
-                          }}
-                        >
-                          <Pencil className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => setClientToDelete(client)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </TableCell>
+        <div className="space-y-5">
+          <Card className="bg-white/85">
+            <CardContent className="p-0">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>ID</TableHead>
+                    <TableHead>Имя</TableHead>
+                    <TableHead>Фамилия</TableHead>
+                    <TableHead className="text-right">Действия</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
+                </TableHeader>
+                <TableBody>
+                  {paginatedClients.map((client) => (
+                    <TableRow key={client.id}>
+                      <TableCell>#{client.id}</TableCell>
+                      <TableCell className="font-medium">{client.firstName}</TableCell>
+                      <TableCell>{client.lastName}</TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-2">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => {
+                              setSelectedClient(client);
+                              setDialogOpen(true);
+                            }}
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => setClientToDelete(client)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+
+          <PaginationControls
+            page={page}
+            totalPages={totalPages}
+            totalItems={clients.length}
+            itemLabel="клиентов"
+            onPageChange={setPage}
+          />
+        </div>
       )}
 
       <ClientFormDialog

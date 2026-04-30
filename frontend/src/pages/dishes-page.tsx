@@ -2,6 +2,7 @@ import { startTransition, useEffect, useState } from "react";
 import { Plus } from "lucide-react";
 import { toast } from "sonner";
 import { DeleteConfirmationDialog } from "@/components/shared/delete-confirmation-dialog";
+import { PaginationControls } from "@/components/shared/pagination-controls";
 import { PageHeader } from "@/components/shared/page-header";
 import { SearchInput } from "@/components/shared/search-input";
 import { ErrorState, LoadingState } from "@/components/shared/status-view";
@@ -16,11 +17,15 @@ import type { Category, Dish, Ingredient } from "@/types/entities";
 import { getApiErrorMessage } from "@/lib/api";
 
 export function DishesPage() {
+  const pageSize = 9;
   const [dishes, setDishes] = useState<Dish[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [ingredients, setIngredients] = useState<Ingredient[]>([]);
   const [query, setQuery] = useState("");
   const [priceRange, setPriceRange] = useState({ min: "", max: "" });
+  const [page, setPage] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
+  const [totalElements, setTotalElements] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -40,11 +45,15 @@ export function DishesPage() {
           query: query || undefined,
           minPrice: priceRange.min ? Number(priceRange.min) : undefined,
           maxPrice: priceRange.max ? Number(priceRange.max) : undefined,
+          page,
+          size: pageSize,
         }),
         categoriesService.getAll(),
         ingredientsService.getAll(),
       ]);
       setDishes(dishResponse.content);
+      setTotalPages(dishResponse.totalPages);
+      setTotalElements(dishResponse.totalElements);
       setCategories(categoryResponse);
       setIngredients(ingredientResponse);
     } catch (err) {
@@ -63,6 +72,10 @@ export function DishesPage() {
     }, 250);
 
     return () => window.clearTimeout(timeoutId);
+  }, [page, query, priceRange.min, priceRange.max]);
+
+  useEffect(() => {
+    setPage(0);
   }, [query, priceRange.min, priceRange.max]);
 
   async function handleSubmit(payload: Omit<Dish, "id">) {
@@ -109,11 +122,10 @@ export function DishesPage() {
   }
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       <PageHeader
         eyebrow="Меню"
         title="Блюда"
-        description="Управляйте блюдами, редактируйте состав и быстро поддерживайте меню в актуальном состоянии."
         actionLabel="Создать блюдо"
         actionIcon={<Plus className="h-4 w-4" />}
         onAction={() => {
@@ -155,18 +167,28 @@ export function DishesPage() {
           }}
         />
       ) : (
-        <div className="grid gap-5 md:grid-cols-2 2xl:grid-cols-3">
-          {dishes.map((dish) => (
-            <DishCard
-              key={dish.id}
-              dish={dish}
-              onEdit={(item) => {
-                setSelectedDish(item);
-                setDialogOpen(true);
-              }}
-              onDelete={setDishToDelete}
-            />
-          ))}
+        <div className="space-y-5">
+          <div className="grid gap-5 md:grid-cols-2 2xl:grid-cols-3">
+            {dishes.map((dish) => (
+              <DishCard
+                key={dish.id}
+                dish={dish}
+                onEdit={(item) => {
+                  setSelectedDish(item);
+                  setDialogOpen(true);
+                }}
+                onDelete={setDishToDelete}
+              />
+            ))}
+          </div>
+
+          <PaginationControls
+            page={page}
+            totalPages={totalPages}
+            totalItems={totalElements}
+            itemLabel="блюд"
+            onPageChange={setPage}
+          />
         </div>
       )}
 

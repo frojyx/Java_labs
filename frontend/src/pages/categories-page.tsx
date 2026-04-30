@@ -2,6 +2,7 @@ import { useDeferredValue, useEffect, useState } from "react";
 import { Pencil, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { DeleteConfirmationDialog } from "@/components/shared/delete-confirmation-dialog";
+import { PaginationControls } from "@/components/shared/pagination-controls";
 import { PageHeader } from "@/components/shared/page-header";
 import { SearchInput } from "@/components/shared/search-input";
 import { ErrorState, LoadingState } from "@/components/shared/status-view";
@@ -15,8 +16,10 @@ import { categoriesService } from "@/services/categories-service";
 import type { Category } from "@/types/entities";
 
 export function CategoriesPage() {
+  const pageSize = 9;
   const [categories, setCategories] = useState<Category[]>([]);
   const [query, setQuery] = useState("");
+  const [page, setPage] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -45,6 +48,17 @@ export function CategoriesPage() {
   useEffect(() => {
     void loadCategories();
   }, [deferredQuery]);
+
+  useEffect(() => {
+    setPage(0);
+  }, [deferredQuery]);
+
+  useEffect(() => {
+    const nextTotalPages = Math.ceil(categories.length / pageSize);
+    if (nextTotalPages > 0 && page > nextTotalPages - 1) {
+      setPage(nextTotalPages - 1);
+    }
+  }, [categories.length, page]);
 
   async function handleSubmit(payload: Omit<Category, "id">) {
     setIsSubmitting(true);
@@ -89,12 +103,14 @@ export function CategoriesPage() {
     return <ErrorState message={error} onRetry={loadCategories} />;
   }
 
+  const totalPages = Math.ceil(categories.length / pageSize);
+  const paginatedCategories = categories.slice(page * pageSize, page * pageSize + pageSize);
+
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       <PageHeader
         eyebrow="Структура меню"
         title="Категории"
-        description="Удобное управление категориями с быстрым поиском и аккуратным отображением."
         actionLabel="Создать категорию"
         actionIcon={<Plus className="h-4 w-4" />}
         onAction={() => {
@@ -122,36 +138,46 @@ export function CategoriesPage() {
           }}
         />
       ) : (
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-          {categories.map((category) => (
-            <Card key={category.id} className="bg-white/85">
-              <CardContent className="flex items-center justify-between gap-4 p-5">
-                <div className="space-y-3">
-                  <Badge variant="secondary">#{category.id}</Badge>
-                  <h3 className="font-display text-2xl">{category.name}</h3>
-                </div>
-                <div className="flex gap-2">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => {
-                      setSelectedCategory(category);
-                      setDialogOpen(true);
-                    }}
-                  >
-                    <Pencil className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => setCategoryToDelete(category)}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+        <div className="space-y-5">
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+            {paginatedCategories.map((category) => (
+              <Card key={category.id} className="bg-white/85">
+                <CardContent className="flex items-center justify-between gap-4 p-5">
+                  <div className="space-y-3">
+                    <Badge variant="secondary">#{category.id}</Badge>
+                    <h3 className="font-display text-2xl">{category.name}</h3>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => {
+                        setSelectedCategory(category);
+                        setDialogOpen(true);
+                      }}
+                    >
+                      <Pencil className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => setCategoryToDelete(category)}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+
+          <PaginationControls
+            page={page}
+            totalPages={totalPages}
+            totalItems={categories.length}
+            itemLabel="категорий"
+            onPageChange={setPage}
+          />
         </div>
       )}
 

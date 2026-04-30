@@ -2,6 +2,7 @@ import { useDeferredValue, useEffect, useState } from "react";
 import { Pencil, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { DeleteConfirmationDialog } from "@/components/shared/delete-confirmation-dialog";
+import { PaginationControls } from "@/components/shared/pagination-controls";
 import { PageHeader } from "@/components/shared/page-header";
 import { SearchInput } from "@/components/shared/search-input";
 import { ErrorState, LoadingState } from "@/components/shared/status-view";
@@ -15,8 +16,10 @@ import { ingredientsService } from "@/services/ingredients-service";
 import type { Ingredient } from "@/types/entities";
 
 export function IngredientsPage() {
+  const pageSize = 9;
   const [ingredients, setIngredients] = useState<Ingredient[]>([]);
   const [query, setQuery] = useState("");
+  const [page, setPage] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -45,6 +48,17 @@ export function IngredientsPage() {
   useEffect(() => {
     void loadIngredients();
   }, [deferredQuery]);
+
+  useEffect(() => {
+    setPage(0);
+  }, [deferredQuery]);
+
+  useEffect(() => {
+    const nextTotalPages = Math.ceil(ingredients.length / pageSize);
+    if (nextTotalPages > 0 && page > nextTotalPages - 1) {
+      setPage(nextTotalPages - 1);
+    }
+  }, [ingredients.length, page]);
 
   async function handleSubmit(payload: Omit<Ingredient, "id">) {
     setIsSubmitting(true);
@@ -89,12 +103,14 @@ export function IngredientsPage() {
     return <ErrorState message={error} onRetry={loadIngredients} />;
   }
 
+  const totalPages = Math.ceil(ingredients.length / pageSize);
+  const paginatedIngredients = ingredients.slice(page * pageSize, page * pageSize + pageSize);
+
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       <PageHeader
         eyebrow="Каталог ингредиентов"
         title="Ингредиенты"
-        description="Удобное управление ингредиентами с поиском и быстрым редактированием."
         actionLabel="Создать ингредиент"
         actionIcon={<Plus className="h-4 w-4" />}
         onAction={() => {
@@ -122,36 +138,46 @@ export function IngredientsPage() {
           }}
         />
       ) : (
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-          {ingredients.map((ingredient) => (
-            <Card key={ingredient.id} className="bg-white/85">
-              <CardContent className="flex items-center justify-between gap-4 p-5">
-                <div className="space-y-3">
-                  <Badge variant="secondary">#{ingredient.id}</Badge>
-                  <h3 className="font-display text-2xl">{ingredient.name}</h3>
-                </div>
-                <div className="flex gap-2">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => {
-                      setSelectedIngredient(ingredient);
-                      setDialogOpen(true);
-                    }}
-                  >
-                    <Pencil className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => setIngredientToDelete(ingredient)}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+        <div className="space-y-5">
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+            {paginatedIngredients.map((ingredient) => (
+              <Card key={ingredient.id} className="bg-white/85">
+                <CardContent className="flex items-center justify-between gap-4 p-5">
+                  <div className="space-y-3">
+                    <Badge variant="secondary">#{ingredient.id}</Badge>
+                    <h3 className="font-display text-2xl">{ingredient.name}</h3>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => {
+                        setSelectedIngredient(ingredient);
+                        setDialogOpen(true);
+                      }}
+                    >
+                      <Pencil className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => setIngredientToDelete(ingredient)}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+
+          <PaginationControls
+            page={page}
+            totalPages={totalPages}
+            totalItems={ingredients.length}
+            itemLabel="ингредиентов"
+            onPageChange={setPage}
+          />
         </div>
       )}
 
