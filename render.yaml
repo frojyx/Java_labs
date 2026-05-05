@@ -16,8 +16,10 @@ services:
     autoDeployTrigger: commit
     healthCheckPath: /actuator/health
     envVars:
-      - key: SPRING_DATASOURCE_URL
-        value: jdbc:postgresql://REPLACE_WITH_RENDER_DB_HOST:5432/restaurant_db
+      - key: DATABASE_URL
+        fromDatabase:
+          name: restaurant-db
+          property: connectionString
       - key: SPRING_DATASOURCE_USERNAME
         fromDatabase:
           name: restaurant-db
