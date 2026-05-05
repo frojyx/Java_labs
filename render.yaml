@@ -28,6 +28,8 @@ services:
         value: "false"
       - key: SPRING_JPA_FORMAT_SQL
         value: "false"
+      - key: APP_CORS_ALLOWED_ORIGIN
+        value: https://restaurant-frontend.onrender.com
 
   - name: restaurant-frontend
     type: web
@@ -38,7 +40,7 @@ services:
     autoDeployTrigger: commit
     envVars:
       - key: VITE_API_BASE_URL
-        value: https://REPLACE_WITH_RENDER_BACKEND_URL/api
+        value: https://restaurant-backend.onrender.com/api
     routes:
       - type: rewrite
         source: /*
