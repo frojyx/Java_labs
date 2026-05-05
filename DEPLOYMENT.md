@@ -17,6 +17,14 @@ Services:
 - Swagger UI: `http://localhost:8080/swagger-ui.html`
 - Healthcheck: `http://localhost:8080/actuator/health`
 
+The PostgreSQL container starts without seed SQL because application tables are
+created by Spring Boot after the database is already running. If you need demo
+data, start the stack first and then run:
+
+```powershell
+./scripts/seed-restaurant-db.ps1
+```
+
 ## 2. Environment variables
 
 Backend reads configuration from environment variables:
