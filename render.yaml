@@ -36,7 +36,6 @@ services:
   - name: restaurant-frontend
     type: web
     runtime: static
-    plan: free
     rootDir: frontend
     buildCommand: npm ci && npm run build
     staticPublishPath: dist
