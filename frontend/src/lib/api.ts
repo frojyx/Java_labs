@@ -4,7 +4,7 @@ const baseURL = import.meta.env.VITE_API_BASE_URL || "/api";
 
 export const api = axios.create({
   baseURL,
-  timeout: 10000,
+  timeout: 30000,
 });
 
 export function getApiErrorMessage(error: unknown) {
