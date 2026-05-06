@@ -38,18 +38,30 @@ export function OrderFormDialog({
   const [dishNames, setDishNames] = useState<string[]>([]);
 
   useEffect(() => {
-    setFirstName(order?.clientFirstName || "");
-    setLastName(order?.clientLastName || "");
+    setDishNames(order?.dishNames || []);
+
     if (order) {
+      setFirstName(order.clientFirstName);
+      setLastName(order.clientLastName);
+
       const matchedClient = clients.find(
         (client) =>
           client.firstName === order.clientFirstName && client.lastName === order.clientLastName,
       );
       setSelectedClientId(matchedClient ? String(matchedClient.id) : "");
+      return;
+    }
+
+    if (clients.length > 0) {
+      const defaultClient = clients[0];
+      setSelectedClientId(String(defaultClient.id));
+      setFirstName(defaultClient.firstName);
+      setLastName(defaultClient.lastName);
     } else {
       setSelectedClientId("");
+      setFirstName("");
+      setLastName("");
     }
-    setDishNames(order?.dishNames || []);
   }, [clients, order, open]);
 
   const isEditing = Boolean(order);
@@ -67,34 +79,32 @@ export function OrderFormDialog({
         </DialogHeader>
         <div className="grid gap-5 sm:grid-cols-2">
           {isEditing ? null : (
-            <>
-              <div className="space-y-2">
-                <Label htmlFor="order-client">Клиент</Label>
-                <Select
-                  id="order-client"
-                  value={selectedClientId}
-                  placeholder="Выберите существующего клиента"
-                  onChange={(event) => {
-                    const nextClientId = event.target.value;
-                    setSelectedClientId(nextClientId);
+            <div className="space-y-2 sm:col-span-2">
+              <Label htmlFor="order-client">Клиент</Label>
+              <Select
+                id="order-client"
+                value={selectedClientId}
+                placeholder="Выберите существующего клиента"
+                onChange={(event) => {
+                  const nextClientId = event.target.value;
+                  setSelectedClientId(nextClientId);
 
-                    const selectedClient = clients.find(
-                      (client) => String(client.id) === nextClientId,
-                    );
-                    setFirstName(selectedClient?.firstName || "");
-                    setLastName(selectedClient?.lastName || "");
-                  }}
-                >
-                  {clients.map((client) => (
-                    <option key={client.id} value={client.id}>
-                      {client.firstName} {client.lastName}
-                    </option>
-                  ))}
-                </Select>
-              </div>
-            </>
+                  const selectedClient = clients.find(
+                    (client) => String(client.id) === nextClientId,
+                  );
+                  setFirstName(selectedClient?.firstName || "");
+                  setLastName(selectedClient?.lastName || "");
+                }}
+              >
+                {clients.map((client) => (
+                  <option key={client.id} value={client.id}>
+                    {client.firstName} {client.lastName}
+                  </option>
+                ))}
+              </Select>
+            </div>
           )}
-          <div className={isEditing ? "sm:col-span-2" : "sm:col-span-2"}>
+          <div className="sm:col-span-2">
             <MultiValueInput
               label="Блюда"
               values={dishNames}
@@ -109,7 +119,7 @@ export function OrderFormDialog({
             Отмена
           </Button>
           <Button
-            disabled={isSubmitting || (!isEditing && !selectedClientId)}
+            disabled={isSubmitting || (!isEditing && (!selectedClientId || dishNames.length === 0))}
             onClick={() =>
               onSubmit({
                 clientFirstName: isEditing ? order?.clientFirstName || "" : firstName.trim(),
