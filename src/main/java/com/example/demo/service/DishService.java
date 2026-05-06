@@ -74,7 +74,9 @@ public class DishService {
 
     @Transactional(readOnly = true)
     public List<DishDto> findAll() {
-        return dishMapper.toDtoList(dishRepository.findAll());
+        return dishRepository.findAllProjected().stream()
+            .map(this::mapNativeProjectionToDto)
+            .toList();
     }
 
     @Transactional(readOnly = true)

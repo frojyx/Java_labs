@@ -18,6 +18,23 @@ public interface DishRepository extends JpaRepository<Dish, Long> {
     @EntityGraph(attributePaths = {"category", "ingredients"})
     List<Dish> findAll();
 
+    @Query(value = """
+        select
+            d.id as id,
+            d.name as name,
+            d.price as price,
+            d.weight as weight,
+            c.name as category,
+            coalesce(string_agg(distinct i.name, ','), '') as ingredientsCsv
+        from dishes d
+        left join categories c on c.id = d.category_id
+        left join dish_ingredients di on di.dish_id = d.id
+        left join ingredients i on i.id = di.ingredient_id
+        group by d.id, d.name, d.price, d.weight, c.name
+        order by d.id
+        """, nativeQuery = true)
+    List<DishSearchNativeProjection> findAllProjected();
+
     List<Dish> findByNameIn(List<String> names);
 
     List<Dish> findByPrice(double price);

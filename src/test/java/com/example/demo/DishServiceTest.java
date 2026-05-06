@@ -103,13 +103,45 @@ class DishServiceTest {
 
     @Test
     void findAllMapsList() {
-        Dish dish = new Dish();
-        dish.setName("Soup");
-        when(dishRepository.findAll()).thenReturn(List.of(dish));
+        DishSearchNativeProjection projection = new DishSearchNativeProjection() {
+            @Override
+            public Long getId() {
+                return 1L;
+            }
+
+            @Override
+            public String getName() {
+                return "Soup";
+            }
+
+            @Override
+            public double getPrice() {
+                return 12.5;
+            }
+
+            @Override
+            public int getWeight() {
+                return 300;
+            }
+
+            @Override
+            public String getCategory() {
+                return "Hot";
+            }
+
+            @Override
+            public String getIngredientsCsv() {
+                return "Salt,Water";
+            }
+        };
+        when(dishRepository.findAllProjected()).thenReturn(List.of(projection));
 
         List<DishDto> result = dishService.findAll();
 
         assertEquals(1, result.size());
+        assertEquals("Soup", result.get(0).getName());
+        assertEquals("Hot", result.get(0).getCategory());
+        assertEquals(List.of("Salt", "Water"), result.get(0).getIngredients());
     }
 
     @Test
