@@ -11,11 +11,12 @@ on:
       - master
   workflow_dispatch:
 
-env:
-  IMAGE_NAME: ghcr.io/${{ github.repository_owner }}/restaurant-backend
+concurrency:
+  group: render-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
-  backend-test:
+  backend-build-test:
     name: Backend build and test
     runs-on: ubuntu-latest
     permissions:
@@ -42,7 +43,7 @@ jobs:
       - name: Make mvnw executable
         run: chmod +x mvnw
 
-      - name: Build + lint + tests + JaCoCo
+      - name: Build + lint + tests
         run: ./mvnw -B clean verify
 
       - name: SonarCloud scan
@@ -84,80 +85,96 @@ jobs:
           VITE_API_BASE_URL: /api
         run: npm run build
 
-  docker-image:
-    name: Build and publish backend image
+  deploy-render-backend:
+    name: Deploy backend to Render
     runs-on: ubuntu-latest
     needs:
-      - backend-test
+      - backend-build-test
       - frontend-build
-    if: ${{ github.event_name == 'push' && (github.ref_name == 'main' || github.ref_name == 'master') }}
-    permissions:
-      contents: read
-      packages: write
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Log in to GitHub Container Registry
-        uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Extract Docker metadata
-        id: meta
-        uses: docker/metadata-action@v5
-        with:
-          images: ${{ env.IMAGE_NAME }}
-          tags: |
-            type=raw,value=latest
-            type=sha
-
-      - name: Build and push image
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          file: ./Dockerfile
-          push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
-
-  deploy-backend:
-    name: Deploy backend and run healthcheck
-    runs-on: ubuntu-latest
-    needs: docker-image
-    if: ${{ github.event_name == 'push' && (github.ref_name == 'main' || github.ref_name == 'master') && secrets.KOYEB_TOKEN != '' && secrets.KOYEB_APP_NAME != '' && secrets.KOYEB_SERVICE_NAME != '' && secrets.KOYEB_HEALTHCHECK_URL != '' }}
+    if: ${{ github.event_name != 'pull_request' && (github.ref_name == 'main' || github.ref_name == 'master') && secrets.RENDER_API_KEY != '' && secrets.RENDER_BACKEND_SERVICE_ID != '' }}
     permissions:
       contents: read
 
     steps:
-      - name: Install Koyeb CLI
-        run: curl -fsSL https://raw.githubusercontent.com/koyeb/koyeb-cli/master/install.sh | sh
-
-      - name: Add Koyeb CLI to PATH
-        run: echo "$HOME/.koyeb/bin" >> "$GITHUB_PATH"
-
-      - name: Redeploy service
+      - name: Trigger backend deploy
         env:
-          KOYEB_TOKEN: ${{ secrets.KOYEB_TOKEN }}
-          KOYEB_APP_NAME: ${{ secrets.KOYEB_APP_NAME }}
-          KOYEB_SERVICE_NAME: ${{ secrets.KOYEB_SERVICE_NAME }}
-        run: koyeb services redeploy "${KOYEB_APP_NAME}/${KOYEB_SERVICE_NAME}" --token "${KOYEB_TOKEN}" --wait
-
-      - name: Healthcheck
-        env:
-          HEALTHCHECK_URL: ${{ secrets.KOYEB_HEALTHCHECK_URL }}
+          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+          RENDER_BACKEND_SERVICE_ID: ${{ secrets.RENDER_BACKEND_SERVICE_ID }}
+          COMMIT_SHA: ${{ github.sha }}
         run: |
-          for i in {1..20}; do
+          curl --fail --silent --show-error \
+            --request POST \
+            --url "https://api.render.com/v1/services/${RENDER_BACKEND_SERVICE_ID}/deploys" \
+            --header "accept: application/json" \
+            --header "authorization: Bearer ${RENDER_API_KEY}" \
+            --header "content-type: application/json" \
+            --data "{\"clearCache\":\"do_not_clear\",\"commitId\":\"${COMMIT_SHA}\"}"
+
+  backend-healthcheck:
+    name: Backend healthcheck
+    runs-on: ubuntu-latest
+    needs: deploy-render-backend
+    if: ${{ github.event_name != 'pull_request' && (github.ref_name == 'main' || github.ref_name == 'master') && secrets.RENDER_BACKEND_HEALTHCHECK_URL != '' }}
+    permissions:
+      contents: read
+
+    steps:
+      - name: Wait for backend healthcheck
+        env:
+          HEALTHCHECK_URL: ${{ secrets.RENDER_BACKEND_HEALTHCHECK_URL }}
+        run: |
+          for i in {1..30}; do
             if curl --fail --silent --show-error "$HEALTHCHECK_URL"; then
               exit 0
             fi
-            sleep 15
+            echo "Backend not ready yet, retry $i/30"
+            sleep 20
           done
-          echo "Healthcheck failed for $HEALTHCHECK_URL"
+          echo "Backend healthcheck failed: $HEALTHCHECK_URL"
+          exit 1
+
+  deploy-render-frontend:
+    name: Deploy frontend to Render
+    runs-on: ubuntu-latest
+    needs: backend-healthcheck
+    if: ${{ github.event_name != 'pull_request' && (github.ref_name == 'main' || github.ref_name == 'master') && secrets.RENDER_API_KEY != '' && secrets.RENDER_FRONTEND_SERVICE_ID != '' }}
+    permissions:
+      contents: read
+
+    steps:
+      - name: Trigger frontend deploy
+        env:
+          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+          RENDER_FRONTEND_SERVICE_ID: ${{ secrets.RENDER_FRONTEND_SERVICE_ID }}
+          COMMIT_SHA: ${{ github.sha }}
+        run: |
+          curl --fail --silent --show-error \
+            --request POST \
+            --url "https://api.render.com/v1/services/${RENDER_FRONTEND_SERVICE_ID}/deploys" \
+            --header "accept: application/json" \
+            --header "authorization: Bearer ${RENDER_API_KEY}" \
+            --header "content-type: application/json" \
+            --data "{\"clearCache\":\"do_not_clear\",\"commitId\":\"${COMMIT_SHA}\"}"
+
+  frontend-healthcheck:
+    name: Frontend healthcheck
+    runs-on: ubuntu-latest
+    needs: deploy-render-frontend
+    if: ${{ github.event_name != 'pull_request' && (github.ref_name == 'main' || github.ref_name == 'master') && secrets.RENDER_FRONTEND_URL != '' }}
+    permissions:
+      contents: read
+
+    steps:
+      - name: Wait for frontend
+        env:
+          FRONTEND_URL: ${{ secrets.RENDER_FRONTEND_URL }}
+        run: |
+          for i in {1..30}; do
+            if curl --fail --silent --show-error "$FRONTEND_URL"; then
+              exit 0
+            fi
+            echo "Frontend not ready yet, retry $i/30"
+            sleep 20
+          done
+          echo "Frontend healthcheck failed: $FRONTEND_URL"
           exit 1
