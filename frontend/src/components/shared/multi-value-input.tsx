@@ -36,6 +36,15 @@ export function MultiValueInput({
     }
   }
 
+  function handleChange(nextValue: string) {
+    setDraft(nextValue);
+
+    const normalizedValue = nextValue.trim();
+    if (normalizedValue && suggestions.includes(normalizedValue)) {
+      addValue(normalizedValue);
+    }
+  }
+
   return (
     <div className="space-y-3">
       <div className="text-sm font-medium text-foreground/90">{label}</div>
@@ -43,7 +52,7 @@ export function MultiValueInput({
         value={draft}
         list={`${label}-suggestions`}
         placeholder={placeholder}
-        onChange={(event) => setDraft(event.target.value)}
+        onChange={(event) => handleChange(event.target.value)}
         onKeyDown={handleKeyDown}
       />
       <datalist id={`${label}-suggestions`}>
