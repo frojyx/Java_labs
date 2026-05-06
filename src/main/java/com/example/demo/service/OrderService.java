@@ -15,11 +15,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 @Service
 public class OrderService {
@@ -177,17 +178,22 @@ public class OrderService {
 
     private List<Dish> resolveDishesOrThrow(List<String> dishNames) {
         List<Dish> dishes = dishRepository.findByNameIn(dishNames);
-        if (dishes.size() == dishNames.size()) {
-            return dishes;
+        Map<String, Dish> dishesByName = new LinkedHashMap<>();
+        for (Dish dish : dishes) {
+            dishesByName.putIfAbsent(dish.getName(), dish);
         }
 
-        Set<String> foundDishNames = dishes.stream()
-            .map(Dish::getName)
-            .collect(Collectors.toSet());
+        Set<String> foundDishNames = dishesByName.keySet();
         List<String> missingDishNames = dishNames.stream()
             .filter(name -> !foundDishNames.contains(name))
             .distinct()
             .toList();
+
+        if (missingDishNames.isEmpty()) {
+            return dishNames.stream()
+                .map(dishesByName::get)
+                .toList();
+        }
 
         throw new UnprocessableEntityException(
             "Cannot create order. Dishes not found: " + String.join(", ", missingDishNames)

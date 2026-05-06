@@ -136,6 +136,29 @@ class OrderServiceTest {
     }
 
     @Test
+    void createNewOrderUsesFirstDishWhenDatabaseContainsDuplicateDishNames() {
+        OrderDto orderDto = buildOrderDto("Anna", "Lee", List.of("Pasta"));
+        Client client = new Client();
+        client.setFirstName("Anna");
+        client.setLastName("Lee");
+        Dish firstPasta = buildDish(1L, "Pasta");
+        Dish secondPasta = buildDish(2L, "Pasta");
+
+        when(clientRepository.findByFirstNameAndLastName("Anna", "Lee")).thenReturn(Optional.of(client));
+        when(dishRepository.findByNameIn(List.of("Pasta"))).thenReturn(List.of(firstPasta, secondPasta));
+        when(orderRepository.save(any(Order.class))).thenAnswer(invocation -> {
+            Order order = invocation.getArgument(0);
+            order.setId(77L);
+            return order;
+        });
+
+        OrderDto result = orderService.createNewOrder(orderDto);
+
+        assertEquals(77L, result.getId());
+        assertEquals(List.of("Pasta"), result.getDishNames());
+    }
+
+    @Test
     void createOrdersBulkReturnsCreatedOrders() {
         OrderDto first = buildOrderDto("A", "B", List.of("Pasta"));
         OrderDto second = buildOrderDto("C", "D", List.of("Soup"));
