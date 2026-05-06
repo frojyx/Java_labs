@@ -133,7 +133,7 @@ public class OrderService {
         order.setDishes(dishes);
         Order savedOrder = orderRepository.save(order);
 
-        return orderMapper.toDto(savedOrder);
+        return buildCreatedOrderDto(savedOrder.getId(), client, dishes);
     }
 
     private Client resolveExistingClientOrThrow(OrderDto orderDto) {
@@ -192,5 +192,16 @@ public class OrderService {
         throw new UnprocessableEntityException(
             "Cannot create order. Dishes not found: " + String.join(", ", missingDishNames)
         );
+    }
+
+    private OrderDto buildCreatedOrderDto(Long orderId, Client client, List<Dish> dishes) {
+        OrderDto dto = new OrderDto();
+        dto.setId(orderId);
+        dto.setClientFirstName(client.getFirstName());
+        dto.setClientLastName(client.getLastName());
+        dto.setDishNames(dishes.stream()
+            .map(Dish::getName)
+            .toList());
+        return dto;
     }
 }

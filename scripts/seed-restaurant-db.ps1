@@ -566,6 +566,39 @@ $dishes = @(
     }
 )
 
+$clients = @(
+    @{ firstName = "Ivan"; lastName = "Petrov" }
+    @{ firstName = "Anna"; lastName = "Sidorova" }
+    @{ firstName = "Maksim"; lastName = "Orlov" }
+    @{ firstName = "Elena"; lastName = "Kovaleva" }
+    @{ firstName = "Dmitry"; lastName = "Smirnov" }
+    @{ firstName = "Olga"; lastName = "Melnik" }
+    @{ firstName = "Artem"; lastName = "Vlasov" }
+    @{ firstName = "Natalia"; lastName = "Egorova" }
+    @{ firstName = "Sergey"; lastName = "Gromov" }
+    @{ firstName = "Marina"; lastName = "Belova" }
+    @{ firstName = "Alexey"; lastName = "Trofimov" }
+    @{ firstName = "Yulia"; lastName = "Zaitseva" }
+    @{ firstName = "Viktor"; lastName = "Lebedev" }
+    @{ firstName = "Daria"; lastName = "Sokolova" }
+    @{ firstName = "Pavel"; lastName = "Rudenko" }
+    @{ firstName = "Irina"; lastName = "Frolova" }
+    @{ firstName = "Georgy"; lastName = "Morozov" }
+    @{ firstName = "Svetlana"; lastName = "Bykova" }
+    @{ firstName = "Kirill"; lastName = "Nosov" }
+    @{ firstName = "Tatiana"; lastName = "Anisimova" }
+    @{ firstName = "Ruslan"; lastName = "Zhukov" }
+    @{ firstName = "Alena"; lastName = "Kravtsova" }
+    @{ firstName = "Vadim"; lastName = "Kiselev" }
+    @{ firstName = "Lilia"; lastName = "Guseva" }
+    @{ firstName = "Roman"; lastName = "Dyakov" }
+    @{ firstName = "Nina"; lastName = "Maslova" }
+    @{ firstName = "Oleg"; lastName = "Voronin" }
+    @{ firstName = "Milana"; lastName = "Rybak" }
+    @{ firstName = "Denis"; lastName = "Karpov" }
+    @{ firstName = "Kristina"; lastName = "Borisova" }
+)
+
 $orders = @(
     @{ clientFirstName = "Ivan"; clientLastName = "Petrov"; dishNames = @("Carbonara", "Caesar Salad") }
     @{ clientFirstName = "Anna"; clientLastName = "Sidorova"; dishNames = @("Mushroom Cream Soup", "Tiramisu") }
@@ -615,6 +648,9 @@ Ensure-Entities -EntityName "Ingredients" -GetPath "/api/ingredients" -PostPath 
 
 Ensure-Dishes -Dishes $dishes
 
+Ensure-Entities -EntityName "Clients" -GetPath "/api/clients" -PostPath "/api/clients" `
+    -Items $clients -KeySelector { param($item) "$($item.firstName) $($item.lastName)".Trim().ToLowerInvariant() }
+
 Ensure-Orders -Orders $orders
 
 Write-Host ""
@@ -622,4 +658,5 @@ Write-Host "Done."
 Write-Host ("Category seed items: {0}" -f $categories.Count)
 Write-Host ("Ingredient seed items: {0}" -f $ingredients.Count)
 Write-Host ("Dish seed items: {0}" -f $dishes.Count)
+Write-Host ("Client seed items: {0}" -f $clients.Count)
 Write-Host ("Order seed items: {0}" -f $orders.Count)

@@ -96,6 +96,9 @@ class OrderServiceTest {
         OrderDto result = orderService.createNewOrder(orderDto);
 
         assertEquals(55L, result.getId());
+        assertEquals("Anna", result.getClientFirstName());
+        assertEquals("Lee", result.getClientLastName());
+        assertEquals(List.of("Pasta"), result.getDishNames());
         verify(orderRepository).save(any(Order.class));
     }
 
